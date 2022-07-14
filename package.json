@@ -1,0 +1,38 @@
+{
+  "name": "errokees",
+  "version": "0.1.0",
+  "description": "Arrow key navigation and selection in browser.",
+  "module": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "webpack",
+    "lint": "eslint",
+    "start": "webpack-dev-server --open --config ./webpack.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/btimby/errokees.git"
+  },
+  "keywords": [
+    "browser",
+    "arrow",
+    "keys",
+    "navigation",
+    "library"
+  ],
+  "author": "Ben Timby <btimby@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/btimby/errokees/issues"
+  },
+  "homepage": "https://github.com/btimby/errokees#readme",
+  "devDependencies": {
+    "eslint": "^8.19.0",
+    "html-webpack-plugin": "^5.5.0",
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.9.3"
+  },
+  "dependencies": {
+  }
+}

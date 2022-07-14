@@ -1,0 +1,424 @@
+/*
+Errokees [ah-ro-ki:z]
+*/
+"use strict";
+
+const defaults = {
+  // keys...
+  up: 'ArrowUp',
+  down: 'ArrowDown',
+  left: 'ArrowLeft',
+  right: 'ArrowRight',
+  activate: 'Enter',
+
+  // css classes
+  selectableClass: 'errokees-selectable',
+  selectedClass: 'errokees-selected',
+
+  // origin (select item by default)
+  origin: 'right',
+  keyEventName: 'keydown',
+  selectEventName: null,
+  activateEventName: null,
+}
+
+function log(level, ...args) {
+  if (!localStorage.logLevel || localStorage.logLevel < level) {
+    return;
+  }
+  console.log('[errokees]', ...args);
+}
+
+function debug(...args) {
+  log(3, ...args);
+}
+
+function info(...args) {
+  log(2, ...args);
+}
+
+function error(...args) {
+  log(1, ...args);
+}
+
+function overlap(A, B, dir) {
+  let Aone, Atwo, Bone, Btwo;
+  if (dir === 'left' || dir === 'right') {
+    Aone = A.top;
+    Atwo = A.bottom;
+    Bone = B.top;
+    Btwo = B.bottom;
+  } else {
+    Aone = A.left;
+    Atwo = A.right;
+    Bone = B.left;
+    Btwo = B.right;
+  }
+
+  debug(`Aone=${Aone}, Atwo=${Atwo}, Bone=${Bone}, Btwo=${Btwo}`);
+
+  const tBetween = (Bone >= Aone && Bone <= Atwo);
+  const bBetween = (Btwo >= Aone && Btwo <= Atwo);
+  const contains = (Bone <= Aone && Btwo >= Atwo);
+
+  debug(`tBetween=${tBetween}, bBetween=${bBetween}, contans=${contains}`);
+
+  if (tBetween && bBetween) {
+    return Btwo - Aone;
+  } else if (tBetween) {
+    return Atwo - Bone;
+  } else if (bBetween) {
+    return Btwo - Aone;
+  } else if (contains) {
+    return Atwo - Aone;
+  } else {
+    return 0;
+  }
+}
+
+function isFocused(el) {
+  return document.activeElement === el;
+}
+
+function isCursorLeft(el) {
+  return el.selectionStart === 0;
+}
+
+function isCursorRight(el) {
+  return el.selectionStart === el.value.length;
+}
+
+function isSelectedTop(el) {
+  const res = (el.selectedIndex === -1 || el.selectedIndex === 0);
+  debug('selectedIndex', el.selectedIndex, 'isSelectedTop()', res);
+  return res;
+}
+
+function isSelectedBottom(el) {
+  const res = (el.selectedIndex === -1 || el.selectedIndex === el.options.length - 1);
+  debug('selectedIndex', el.selectedIndex, 'isSelectedBottom()', res);
+  return res;
+}
+
+function isInViewport(el) {
+  const width = window.innerWidth || document.documentElement.clientWidth;
+  const height = window.innerHeight || document.documentElement.clientHeight;
+  const rect = el.getBoundingClientRect();
+
+  return (rect.top >= 0 && rect.left >= 0 && rect.right <= width && rect.bottom <= height);
+}
+
+class Errokees {
+  constructor(options) {
+    options = options || defaults;
+    this.options = options;
+    this.movements = {
+      [options.up]: 'up',
+      [options.down]: 'down',
+      [options.left]: 'left',
+      [options.right]: 'right',
+    }
+    this._selected = null;
+    this._selectedType = null;
+    if (options.origin) {
+      this._moveSelection(options.origin);
+    }
+    this._handler = this._onInput.bind(this);
+    document.addEventListener(this.options.keyEventName, this._handler, false);
+  }
+
+  get selected() {
+    return this._selected;
+  }
+
+  set selected(value) {
+    this._selected = value;
+    this._selectedType = null;
+  }
+
+  get selectedType() {
+    if (!this._selectedType && this._selected) {
+      this._selectedType =  this._selected.tagName.toLowerCase();
+      if (this._selectedType === 'input') {
+        const inputType = this._selected.attributes['type'];
+        if (inputType) {
+          this._selectedType += `-${inputType.value}`;
+        }
+      }
+    }
+
+    return this._selectedType || '';
+  }
+
+  disable() {
+    document.removeEventListener(this.options.eventName, this._handler, false);
+    this._handler = null;
+  }
+
+  _moveSelection(dir) {
+    debug('Moving', dir);
+    let origin;
+    const entities = document.getElementsByClassName(this.options.selectableClass);
+
+    if (this.selected) {
+      // Use location of selected item as origin.
+      origin = this.selected.getBoundingClientRect();
+
+    } else {
+      origin = {};
+
+      if (dir === 'up') {
+        // Moving up from bottom edge.
+        origin.left = 0;
+        origin.right = window.innerWidth;
+        origin.top = origin.bottom = window.innerHeight;
+      } else if (dir === 'down') {
+        // Moving down from top edge.
+        origin.top = origin.bottom = origin.left = 0;
+        origin.right = window.innerWidth;
+      } else if (dir === 'left') {
+        // Moving left from right edge.
+        origin.top = 0;
+        origin.left = origin.right = window.innerWidth;
+        origin.bottom = window.innerHeight;
+      } else if (dir === 'right') {
+        // Moving right from left edge.
+        origin.top = origin.right = origin.left = 0;
+        origin.bottom = window.innerHeight;
+      }
+    }
+
+    debug(`origin.top=${origin.top}, origin.left=${origin.left}`);
+    debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
+
+    const toSelect = this._cast(origin, dir, entities)
+    if (toSelect) {
+      // Selecting new element.
+      this._select(toSelect, entities);
+    } else {
+      info('Nothing to select')
+    }
+  }
+
+  _cast(origin, dir, entities) {
+    let best;
+
+    debug("Searching", entities.length, "items");
+
+    if (dir === 'up') {
+      for (let i = 0; i < entities.length; i++) {
+        const e = entities[i];
+        if (this._selected === e) {
+          continue;
+        }
+        const rect = e.getBoundingClientRect();
+        const o = overlap(origin, rect, dir);
+
+        debug(`i=${i}, o=${o}`);
+        debug(`${rect.bottom} > ${origin.bottom}`);
+
+        if (
+              // Left or right should be between origin left & right.
+              o &&
+              // Must be above origin.
+              (rect.bottom <= origin.bottom) &&
+              // Is first match or better than current best.
+              (!best || rect.bottom > best.rect.bottom)
+          ) {
+          debug("Choosing best option");
+          best = { e, rect, o };
+        }
+      }
+
+    } else if (dir === 'down') {
+      for (let i = 0; i < entities.length; i++) {
+        const e = entities[i];
+        if (this._selected === e) {
+          continue;
+        }
+        const rect = e.getBoundingClientRect();
+        const o = overlap(origin, rect, dir);
+
+        debug(`i=${i}, o=${o}`);
+        debug(`${rect.top} < ${origin.top}`);
+
+        if (
+              // Left or right should be between origin left & right.
+              o &&
+              // Must be below origin.
+              (rect.top >= origin.top) &&
+              // Is first match or better than current best.
+              (!best || rect.top < best.rect.top)
+          ) {
+          debug("Choosing best option");
+          best = { e, rect, o };
+        }
+      }
+
+    } else if (dir === 'left') {
+      for (let i = 0; i < entities.length; i++) {
+        const e = entities[i];
+        if (this._selected === e) {
+          continue;
+        }
+        const rect = e.getBoundingClientRect();
+        const o = overlap(origin, rect, dir);
+
+        debug(`i=${i}, o=${o}`);
+        debug(`${rect.left} > ${origin.left}`);
+
+        if (
+              // Top or bottom should be between origin top & bottom.
+              o &&
+              // Must be left of origin.
+              (rect.right <= origin.left) &&
+              // Is first match or better than current best.
+              (!best || rect.left > best.rect.left)
+          ) {
+          debug("Choosing best option");
+          best = { e, rect, o };
+        }
+      }
+
+    } else if (dir === 'right') {
+      for (let i = 0; i < entities.length; i++) {
+        const e = entities[i];
+        if (this._selected === e) {
+          continue;
+        }
+        const rect = e.getBoundingClientRect();
+        const o = overlap(origin, rect, dir);
+
+        debug(`i=${i}, o=${o}`);
+        debug(`${rect.left} < ${origin.left}`);
+
+        if (
+              // Top or bottom should be between origin top & bottom.
+              o &&
+              // Must be right of origin.
+              (rect.left >= origin.right) &&
+              // Is first match or better than current best.
+              (!best || rect.right < best.rect.right)
+          ) {
+          debug("Choosing best option");
+          best = { e, rect, o };
+        }
+      }
+    }
+
+    return best && best.e;
+  }
+
+  _select(element, elements) {
+    const mouseOverEvent = new MouseEvent('mouseover', {
+      view: window,
+      bubbles: true,
+      cancelable: true,
+    });
+    const mouseOutEvent = new MouseEvent('mouseout', {
+      view: window,
+      bubbles: true,
+      cancelable: true,
+    });
+
+    // Deselect current element.
+    if (this.selected) {
+      if (this.selectedType.startsWith('input')) {
+        this.selected.blur();
+      }
+      if (this.selectedType.startsWith('select')) {
+        this.selected.blur();
+      }
+      this.selected.dispatchEvent(mouseOutEvent);
+    }
+
+    // Select new element.
+    for (let i = 0; i < elements.length; i++) {
+      elements[i].classList.remove(this.options.selectedClass);
+    }
+    element.classList.add(this.options.selectedClass);
+    this.selected = element;
+    if (!isInViewport(this.selected)) {
+      this.selected.scrollIntoView();
+    }
+    this.selected.dispatchEvent(mouseOverEvent);
+    if (this.options.selectEventName) {
+      debug('Invoking user selection event');
+      this.selected.dispatchEvent(this.options.selectEventName);
+    }
+
+    // Controls if event bubbles or not.
+    return false;
+  }
+
+  _activate() {
+    debug('Activating selected item', this.selectedType);
+
+    if (this.selectedType.startsWith('input')) {
+      this.selected.focus();
+    } else if (this.selectedType === 'select') {
+      this.selected.focus();
+      // Re-enable key nagivation.
+      this.selected.addEventListener('change', this.selected.blur, { once: true });
+    } else if (this.selectedType === 'a' || this.selectedType === 'button') {
+      this.selected.click();
+    } else {
+      error('No special handling');
+    }
+
+    if (this.options.activateEventName) {
+      debug('Invoking user activation event');
+      this.selected.dispatchEvent(this.options.activateEventName);
+    }
+
+    // Controls if event bubbles or not.
+    return this.selectedType === 'select';
+  }
+
+  _onInput(ev) {
+    const { key } = ev;
+
+    switch (key) {
+      case this.options.activate:
+          ev.returnValue = this._activate();
+          break;
+  
+      default:
+        const dir = this.movements[key];
+
+        if (!dir) {
+          error('Received unknown key:', key);
+          return;
+        }
+
+        // If left or right and text input is focused, only exit focus
+        // when cursor is at beginning or end.
+        const focused = isFocused(this.selected);
+        if (focused) {
+          debug('element is focused');
+        }
+
+        if (this.selectedType.startsWith('input') && focused) {
+          if (dir === 'left' && !isCursorLeft(this.selected)) {
+            return;
+          } else if (dir === 'right' && !isCursorRight(this.selected)) {
+            return;
+          }
+        } else if (this.selectedType === 'select' && focused) {
+          if (dir === 'up' && !isSelectedTop(this.selected)) {
+            return;
+          } else if (dir === 'down' && !isSelectedBottom(this.selected)) {
+            return;
+          }
+        }
+
+        // Prevents scrolling on arrow key.
+        ev.returnValue = this._moveSelection(dir);
+        break;
+    }
+
+    return ev.returnValue;
+  }
+}
+
+module.exports = Errokees;
