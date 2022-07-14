@@ -2,6 +2,7 @@
     <head>
         <title>Errokees demo</title>
         <style>
+            /* Not really related to Errokees. */
             html {
                 background-color: #aaa;
             }
@@ -14,14 +15,17 @@
                 padding: 4px;
             }
 
+            /* Any element with this class will be a navigation destination. */
             .errokees-selectable {
                 border: solid 2px transparent;
             }
 
+            /* Assigned to selected destination. */
             .errokees-selected {
                 border: solid 2px white;
             }
 
+            /* Same as above, but customized for certain elements. */
             button.errokees-selectable,
             select.errokees-selectable,
             input.errokees-selectable {
@@ -62,8 +66,13 @@
 
     <script type="text/javascript">
 
+    // Webpack development server loads our code using defer.
     window.addEventListener('DOMContentLoaded', function() {
 
+        /*
+        We are using all the defaults. If you like, you can override
+        the keys, classes and a few other items using an options object.
+        */
         var ek = new Errokees();
 
     });

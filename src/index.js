@@ -42,6 +42,7 @@ function error(...args) {
 }
 
 function overlap(A, B, dir) {
+  // Basic collision detection. Check if B moving in given dir will impact A.
   let Aone, Atwo, Bone, Btwo;
   if (dir === 'left' || dir === 'right') {
     Aone = A.top;
@@ -57,17 +58,20 @@ function overlap(A, B, dir) {
 
   debug(`Aone=${Aone}, Atwo=${Atwo}, Bone=${Bone}, Btwo=${Btwo}`);
 
-  const tBetween = (Bone >= Aone && Bone <= Atwo);
-  const bBetween = (Btwo >= Aone && Btwo <= Atwo);
+  // Check if B has corners within A's dimensions.
+  const oneBetween = (Bone >= Aone && Bone <= Atwo);
+  const twoBetween = (Btwo >= Aone && Btwo <= Atwo);
+  // Check if B hits A's edge
   const contains = (Bone <= Aone && Btwo >= Atwo);
 
-  debug(`tBetween=${tBetween}, bBetween=${bBetween}, contans=${contains}`);
+  debug(`oneBetween=${oneBetween}, twoBetween=${twoBetween}, contans=${contains}`);
 
-  if (tBetween && bBetween) {
+  // Calculate number of overlapping pixels.
+  if (oneBetween && twoBetween) {
     return Btwo - Aone;
-  } else if (tBetween) {
+  } else if (oneBetween) {
     return Atwo - Bone;
-  } else if (bBetween) {
+  } else if (twoBetween) {
     return Btwo - Aone;
   } else if (contains) {
     return Atwo - Aone;
@@ -100,12 +104,18 @@ function isSelectedBottom(el) {
   return res;
 }
 
-function isInViewport(el) {
+function getViewportDimensions() {
   const width = window.innerWidth || document.documentElement.clientWidth;
   const height = window.innerHeight || document.documentElement.clientHeight;
+
+  return { width, height };
+}
+
+function isInViewport(el) {
+  const vp = getViewportDimensions();
   const rect = el.getBoundingClientRect();
 
-  return (rect.top >= 0 && rect.left >= 0 && rect.right <= width && rect.bottom <= height);
+  return (rect.top >= 0 && rect.left >= 0 && rect.right <= vp.width && rect.bottom <= vp.height);
 }
 
 class Errokees {
@@ -165,32 +175,31 @@ class Errokees {
       origin = this.selected.getBoundingClientRect();
 
     } else {
-      origin = {};
+      // Nothing is currently selected, so use a viewport edge as origin.
+      const vp = getViewportDimensions();
+      origin = { left: 0, right: 0, top: 0, bottom: 0};
 
       if (dir === 'up') {
         // Moving up from bottom edge.
-        origin.left = 0;
-        origin.right = window.innerWidth;
-        origin.top = origin.bottom = window.innerHeight;
+        origin.right = vp.width;
+        origin.top = origin.bottom = vp.height;
       } else if (dir === 'down') {
         // Moving down from top edge.
-        origin.top = origin.bottom = origin.left = 0;
-        origin.right = window.innerWidth;
+        origin.right = vp.width;
       } else if (dir === 'left') {
         // Moving left from right edge.
-        origin.top = 0;
-        origin.left = origin.right = window.innerWidth;
-        origin.bottom = window.innerHeight;
+        origin.left = origin.right = vp.width;
+        origin.bottom = vp.height;
       } else if (dir === 'right') {
         // Moving right from left edge.
-        origin.top = origin.right = origin.left = 0;
-        origin.bottom = window.innerHeight;
+        origin.bottom = vp.height;
       }
     }
 
     debug(`origin.top=${origin.top}, origin.left=${origin.left}`);
     debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
 
+    // Reach out and look for collisions.
     const toSelect = this._cast(origin, dir, entities)
     if (toSelect) {
       // Selecting new element.
@@ -205,6 +214,7 @@ class Errokees {
 
     debug("Searching", entities.length, "items");
 
+    // TODO: DRY, consolidate.
     if (dir === 'up') {
       for (let i = 0; i < entities.length; i++) {
         const e = entities[i];
