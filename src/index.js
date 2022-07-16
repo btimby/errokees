@@ -126,12 +126,18 @@ class Errokees {
     }
     this._selected = null;
     this._selectedType = null;
-    this._entities = [...document.getElementsByClassName(this.options.selectableClass)];
+    this._selectable = new Set([...document.getElementsByClassName(this.options.selectableClass)]);
+    this._mObserver = new MutationObserver(this._onMutation.bind(this));
+    // NOTE: perhaps watch attributes too, to watch for our class being toggled.
+    this._mObserver.observe(document, {
+      subtree: true,
+      childList: true,
+    })
     if (options.origin) {
       this._moveSelection(options.origin);
     }
-    this._handler = this._onInput.bind(this);
-    document.addEventListener(this.options.keyEventName, this._handler, false);
+    this._inputHandler = this._onInput.bind(this);
+    document.addEventListener(this.options.keyEventName, this._inputHandler, false);
   }
 
   get selected() {
@@ -157,13 +163,13 @@ class Errokees {
     return this._selectedType || '';
   }
 
-  get entities() {
-    return this._entities;
+  get selectable() {
+    return this._selectable;
   }
 
   disable() {
-    document.removeEventListener(this.options.eventName, this._handler, false);
-    this._handler = null;
+    document.removeEventListener(this.options.eventName, this._inputHandler, false);
+    this._mObserver.disconnect();
   }
 
   _moveSelection(dir) {
@@ -211,117 +217,111 @@ class Errokees {
 
   _cast(origin, dir) {
     let best;
-    const entities = this.entities;
 
-    debug("Searching", entities.length, "items");
+    debug("Searching", this.selectable.size, "items");
 
     // TODO: DRY, consolidate.
     if (dir === 'up') {
-      for (let i = 0; i < entities.length; i++) {
-        const e = entities[i];
-        if (this._selected === e) {
-          continue;
+      this.selectable.forEach(selectable => {
+        if (this.selected === selectable) {
+          return;
         }
-        const rect = e.getBoundingClientRect();
-        const o = overlap(origin, rect, dir);
+        const rect = selectable.getBoundingClientRect();
+        const area = overlap(origin, rect, dir);
 
-        debug(`i=${i}, o=${o}`);
-        debug(`${rect.bottom} > ${origin.bottom}`);
+        debug(`area=${area}`);
+        debug(`rect.bottom=${rect.bottom} <= origin.bottom=${origin.bottom}`);
 
         if (
               // Left or right should be between origin left & right.
-              o &&
+              area &&
               // Must be above origin.
               (rect.bottom <= origin.bottom) &&
               // Is first match or better than current best.
               (!best || rect.bottom > best.rect.bottom)
           ) {
           debug("Choosing best option");
-          best = { e, rect, o };
+          best = { selectable, rect, area };
         }
-      }
+      });
 
     } else if (dir === 'down') {
-      for (let i = 0; i < entities.length; i++) {
-        const e = entities[i];
-        if (this._selected === e) {
-          continue;
+      this.selectable.forEach(selectable => {
+        if (this.selected === selectable) {
+          return;
         }
-        const rect = e.getBoundingClientRect();
-        const o = overlap(origin, rect, dir);
+        const rect = selectable.getBoundingClientRect();
+        const area = overlap(origin, rect, dir);
 
-        debug(`i=${i}, o=${o}`);
-        debug(`${rect.top} < ${origin.top}`);
+        debug(`area=${area}`);
+        debug(`rect.top=${rect.top} >= origin.top=${origin.top}`);
 
         if (
               // Left or right should be between origin left & right.
-              o &&
+              area &&
               // Must be below origin.
               (rect.top >= origin.top) &&
               // Is first match or better than current best.
               (!best || rect.top < best.rect.top)
           ) {
           debug("Choosing best option");
-          best = { e, rect, o };
+          best = { selectable, rect, area };
         }
-      }
+      });
 
     } else if (dir === 'left') {
-      for (let i = 0; i < entities.length; i++) {
-        const e = entities[i];
-        if (this._selected === e) {
-          continue;
+      this.selectable.forEach(selectable => {
+        if (this.selected === selectable) {
+          return;
         }
-        const rect = e.getBoundingClientRect();
-        const o = overlap(origin, rect, dir);
+        const rect = selectable.getBoundingClientRect();
+        const area = overlap(origin, rect, dir);
 
-        debug(`i=${i}, o=${o}`);
-        debug(`${rect.left} > ${origin.left}`);
+        debug(`area=${area}`);
+        debug(`rect.left=${rect.left} <= origin.left=${origin.left}`);
 
         if (
               // Top or bottom should be between origin top & bottom.
-              o &&
+              area &&
               // Must be left of origin.
               (rect.right <= origin.left) &&
               // Is first match or better than current best.
               (!best || rect.left > best.rect.left)
           ) {
           debug("Choosing best option");
-          best = { e, rect, o };
+          best = { selectable, rect, area };
         }
-      }
+      });
 
     } else if (dir === 'right') {
-      for (let i = 0; i < entities.length; i++) {
-        const e = entities[i];
-        if (this._selected === e) {
-          continue;
+      this.selectable.forEach(selectable => {
+        if (this.selected === selectable) {
+          return;
         }
-        const rect = e.getBoundingClientRect();
-        const o = overlap(origin, rect, dir);
+        const rect = selectable.getBoundingClientRect();
+        const area = overlap(origin, rect, dir);
 
-        debug(`i=${i}, o=${o}`);
-        debug(`${rect.left} < ${origin.left}`);
+        debug(`area=${area}`);
+        debug(`rect.left=${rect.left} >= origin.right=${origin.right}`);
 
         if (
               // Top or bottom should be between origin top & bottom.
-              o &&
+              area &&
               // Must be right of origin.
               (rect.left >= origin.right) &&
               // Is first match or better than current best.
               (!best || rect.right < best.rect.right)
           ) {
           debug("Choosing best option");
-          best = { e, rect, o };
+          best = { selectable, rect, area };
         }
-      }
+      });
     }
 
-    return best && best.e;
+    return best && best.selectable;
   }
 
   _select(element) {
-    const entities = this.entities;
     const mouseOverEvent = new MouseEvent('mouseover', {
       view: window,
       bubbles: true,
@@ -345,7 +345,7 @@ class Errokees {
     }
 
     // Select new element.
-    entities.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
+    this.selectable.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
     element.classList.add(this.options.selectedClass);
     this.selected = element;
     this.selected.scrollIntoView({ block: 'center', inline: 'center' });
@@ -424,6 +424,23 @@ class Errokees {
     }
 
     return ev.returnValue;
+  }
+
+  _onMutation(records) {
+    records.forEach(record => {
+      // console.log(record.addedNodes);
+      record.addedNodes.forEach(node => {
+        if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+          this.selectable.add(node);
+        }
+      });
+
+      record.removedNodes.forEach(node => {
+        if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+          this.selectable.delete(node);
+        }
+      });
+    });
   }
 }
 
