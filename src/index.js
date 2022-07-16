@@ -2,6 +2,7 @@
 Errokees [ah-ro-ki:z]
 */
 "use strict";
+import utils from './utils';
 
 const defaults = {
   // keys...
@@ -20,95 +21,6 @@ const defaults = {
   keyEventName: 'keydown',
   selectEventName: null,
   activateEventName: null,
-}
-
-function log(level, ...args) {
-  if (!localStorage.logLevel || localStorage.logLevel < level) {
-    return;
-  }
-  console.log('[errokees]', ...args);
-}
-
-function debug(...args) {
-  log(3, ...args);
-}
-
-function info(...args) {
-  log(2, ...args);
-}
-
-function error(...args) {
-  log(1, ...args);
-}
-
-function overlap(A, B, dir) {
-  // Basic collision detection. Check if B moving in given dir will impact A.
-  let Aone, Atwo, Bone, Btwo;
-  if (dir === 'left' || dir === 'right') {
-    Aone = A.top;
-    Atwo = A.bottom;
-    Bone = B.top;
-    Btwo = B.bottom;
-  } else {
-    Aone = A.left;
-    Atwo = A.right;
-    Bone = B.left;
-    Btwo = B.right;
-  }
-
-  debug(`Aone=${Aone}, Atwo=${Atwo}, Bone=${Bone}, Btwo=${Btwo}`);
-
-  // Check if B has corners within A's dimensions.
-  const oneBetween = (Bone >= Aone && Bone <= Atwo);
-  const twoBetween = (Btwo >= Aone && Btwo <= Atwo);
-  // Check if B hits A's edge
-  const contains = (Bone <= Aone && Btwo >= Atwo);
-
-  debug(`oneBetween=${oneBetween}, twoBetween=${twoBetween}, contans=${contains}`);
-
-  // Calculate number of overlapping pixels.
-  if (oneBetween && twoBetween) {
-    return Btwo - Aone;
-  } else if (oneBetween) {
-    return Atwo - Bone;
-  } else if (twoBetween) {
-    return Btwo - Aone;
-  } else if (contains) {
-    return Atwo - Aone;
-  } else {
-    return 0;
-  }
-}
-
-function isFocused(el) {
-  return document.activeElement === el;
-}
-
-function isCursorLeft(el) {
-  return el.selectionStart === 0;
-}
-
-function isCursorRight(el) {
-  return el.selectionStart === el.value.length;
-}
-
-function isSelectedTop(el) {
-  const res = (el.selectedIndex === -1 || el.selectedIndex === 0);
-  debug('selectedIndex', el.selectedIndex, 'isSelectedTop()', res);
-  return res;
-}
-
-function isSelectedBottom(el) {
-  const res = (el.selectedIndex === -1 || el.selectedIndex === el.options.length - 1);
-  debug('selectedIndex', el.selectedIndex, 'isSelectedBottom()', res);
-  return res;
-}
-
-function getViewportDimensions() {
-  const width = window.innerWidth || document.documentElement.clientWidth;
-  const height = window.innerHeight || document.documentElement.clientHeight;
-
-  return { width, height };
 }
 
 class Errokees {
@@ -173,7 +85,7 @@ class Errokees {
   }
 
   _moveSelection(dir) {
-    debug('Moving', dir);
+    utils.debug('Moving', dir);
     let origin;
 
     if (this.selected) {
@@ -182,7 +94,7 @@ class Errokees {
 
     } else {
       // Nothing is currently selected, so use a viewport edge as origin.
-      const vp = getViewportDimensions();
+      const vp = utils.getViewportDimensions();
       origin = { left: 0, right: 0, top: 0, bottom: 0};
 
       if (dir === 'up') {
@@ -202,8 +114,8 @@ class Errokees {
       }
     }
 
-    debug(`origin.top=${origin.top}, origin.left=${origin.left}`);
-    debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
+    utils.debug(`origin.top=${origin.top}, origin.left=${origin.left}`);
+    utils.debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
 
     // Reach out and look for collisions.
     const toSelect = this._cast(origin, dir)
@@ -211,112 +123,50 @@ class Errokees {
       // Selecting new element.
       this._select(toSelect);
     } else {
-      info('Nothing to select')
+      utils.info('Nothing to select')
     }
   }
 
   _cast(origin, dir) {
-    let best;
+    let best, dirFunc, bestFunc;
 
-    debug("Searching", this.selectable.size, "items");
+    utils.debug("Searching", this.selectable.size, "items");
 
-    // TODO: DRY, consolidate.
     if (dir === 'up') {
-      this.selectable.forEach(selectable => {
-        if (this.selected === selectable) {
-          return;
-        }
-        const rect = selectable.getBoundingClientRect();
-        const area = overlap(origin, rect, dir);
-
-        debug(`area=${area}`);
-        debug(`rect.bottom=${rect.bottom} <= origin.bottom=${origin.bottom}`);
-
-        if (
-              // Left or right should be between origin left & right.
-              area &&
-              // Must be above origin.
-              (rect.bottom <= origin.bottom) &&
-              // Is first match or better than current best.
-              (!best || rect.bottom > best.rect.bottom)
-          ) {
-          debug("Choosing best option");
-          best = { selectable, rect, area };
-        }
-      });
-
+      dirFunc = utils.above;
+      bestFunc = utils.below;
     } else if (dir === 'down') {
-      this.selectable.forEach(selectable => {
-        if (this.selected === selectable) {
-          return;
-        }
-        const rect = selectable.getBoundingClientRect();
-        const area = overlap(origin, rect, dir);
-
-        debug(`area=${area}`);
-        debug(`rect.top=${rect.top} >= origin.top=${origin.top}`);
-
-        if (
-              // Left or right should be between origin left & right.
-              area &&
-              // Must be below origin.
-              (rect.top >= origin.top) &&
-              // Is first match or better than current best.
-              (!best || rect.top < best.rect.top)
-          ) {
-          debug("Choosing best option");
-          best = { selectable, rect, area };
-        }
-      });
-
+      dirFunc = utils.below;
+      bestFunc = utils.above;
     } else if (dir === 'left') {
-      this.selectable.forEach(selectable => {
-        if (this.selected === selectable) {
-          return;
-        }
-        const rect = selectable.getBoundingClientRect();
-        const area = overlap(origin, rect, dir);
-
-        debug(`area=${area}`);
-        debug(`rect.left=${rect.left} <= origin.left=${origin.left}`);
-
-        if (
-              // Top or bottom should be between origin top & bottom.
-              area &&
-              // Must be left of origin.
-              (rect.right <= origin.left) &&
-              // Is first match or better than current best.
-              (!best || rect.left > best.rect.left)
-          ) {
-          debug("Choosing best option");
-          best = { selectable, rect, area };
-        }
-      });
-
+      dirFunc = utils.left;
+      bestFunc = utils.right;
     } else if (dir === 'right') {
-      this.selectable.forEach(selectable => {
-        if (this.selected === selectable) {
-          return;
-        }
-        const rect = selectable.getBoundingClientRect();
-        const area = overlap(origin, rect, dir);
-
-        debug(`area=${area}`);
-        debug(`rect.left=${rect.left} >= origin.right=${origin.right}`);
-
-        if (
-              // Top or bottom should be between origin top & bottom.
-              area &&
-              // Must be right of origin.
-              (rect.left >= origin.right) &&
-              // Is first match or better than current best.
-              (!best || rect.right < best.rect.right)
-          ) {
-          debug("Choosing best option");
-          best = { selectable, rect, area };
-        }
-      });
+      dirFunc = utils.right;
+      bestFunc = utils.left;
     }
+    
+    this.selectable.forEach(selectable => {
+      if (this.selected === selectable) {
+        return;
+      }
+      const rect = selectable.getBoundingClientRect();
+      const area = utils.overlap(origin, rect, dir);
+
+      utils.debug(`area=${area}`);
+
+      if (
+            // Left or right should be between origin left & right.
+            area &&
+            // Must be above origin.
+            dirFunc(rect, origin) &&
+            // Is first match or better than current best.
+            (!best || bestFunc(rect, best.rect))
+        ) {
+        utils.debug("Choosing best option");
+        best = { selectable, rect, area };
+      }
+    });
 
     return best && best.selectable;
   }
@@ -351,7 +201,7 @@ class Errokees {
     this.selected.scrollIntoView({ block: 'center', inline: 'center' });
     this.selected.dispatchEvent(mouseOverEvent);
     if (this.options.selectEventName) {
-      debug('Invoking user selection event');
+      utils.debug('Invoking user selection event');
       this.selected.dispatchEvent(new Event(this.options.selectEventName, {
         view: window,
         bubbles: true,
@@ -364,7 +214,7 @@ class Errokees {
   }
 
   _activate() {
-    debug('Activating selected item', this.selectedType);
+    utils.debug('Activating selected item', this.selectedType);
 
     if (this.selectedType.startsWith('input')) {
       this.selected.focus();
@@ -375,11 +225,11 @@ class Errokees {
     } else if (this.selectedType === 'a' || this.selectedType === 'button') {
       this.selected.click();
     } else {
-      error('No special handling');
+      utils.error('No special handling');
     }
 
     if (this.options.activateEventName) {
-      debug('Invoking user activation event');
+      utils.debug('Invoking user activation event');
       this.selected.dispatchEvent(new Event(this.options.activateEventName, {
         view: window,
         bubbles: true,
@@ -400,21 +250,21 @@ class Errokees {
     } else if (dir) {
       // If left or right and text input is focused, only exit focus
       // when cursor is at beginning or end.
-      const focused = isFocused(this.selected);
+      const focused = utils.isFocused(this.selected);
       if (focused) {
-        debug('element is focused');
+        utils.debug('element is focused');
       }
 
       if (this.selectedType.startsWith('input') && focused) {
-        if (dir === 'left' && !isCursorLeft(this.selected)) {
+        if (dir === 'left' && !utils.isCursorLeft(this.selected)) {
           return;
-        } else if (dir === 'right' && !isCursorRight(this.selected)) {
+        } else if (dir === 'right' && !utils.isCursorRight(this.selected)) {
           return;
         }
       } else if (this.selectedType === 'select' && focused) {
-        if (dir === 'up' && !isSelectedTop(this.selected)) {
+        if (dir === 'up' && !utils.isSelectedTop(this.selected)) {
           return;
-        } else if (dir === 'down' && !isSelectedBottom(this.selected)) {
+        } else if (dir === 'down' && !utils.isSelectedBottom(this.selected)) {
           return;
         }
       }
