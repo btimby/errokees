@@ -1,5 +1,5 @@
 # errokees
-Errokees [ah-ro-ki:z] - Arrow key navigation and selection in browser.
+Errokees `[ah-ro-ki:z]` - Arrow key navigation and selection in browser.
 
 This library exists because I needed to get the browser embedded into LG TV apps to allow easy navigation via remote. The remote emits arrow keys for navigation as well as <enter> key when OK is pressed.
 
