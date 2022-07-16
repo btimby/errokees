@@ -126,6 +126,7 @@ class Errokees {
     }
     this._selected = null;
     this._selectedType = null;
+    this._entities = [...document.getElementsByClassName(this.options.selectableClass)];
     if (options.origin) {
       this._moveSelection(options.origin);
     }
@@ -156,6 +157,10 @@ class Errokees {
     return this._selectedType || '';
   }
 
+  get entities() {
+    return this._entities;
+  }
+
   disable() {
     document.removeEventListener(this.options.eventName, this._handler, false);
     this._handler = null;
@@ -164,7 +169,6 @@ class Errokees {
   _moveSelection(dir) {
     debug('Moving', dir);
     let origin;
-    const entities = document.getElementsByClassName(this.options.selectableClass);
 
     if (this.selected) {
       // Use location of selected item as origin.
@@ -196,17 +200,18 @@ class Errokees {
     debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
 
     // Reach out and look for collisions.
-    const toSelect = this._cast(origin, dir, entities)
+    const toSelect = this._cast(origin, dir)
     if (toSelect) {
       // Selecting new element.
-      this._select(toSelect, entities);
+      this._select(toSelect);
     } else {
       info('Nothing to select')
     }
   }
 
-  _cast(origin, dir, entities) {
+  _cast(origin, dir) {
     let best;
+    const entities = this.entities;
 
     debug("Searching", entities.length, "items");
 
@@ -315,7 +320,8 @@ class Errokees {
     return best && best.e;
   }
 
-  _select(element, elements) {
+  _select(element) {
+    const entities = this.entities;
     const mouseOverEvent = new MouseEvent('mouseover', {
       view: window,
       bubbles: true,
@@ -339,16 +345,18 @@ class Errokees {
     }
 
     // Select new element.
-    for (let i = 0; i < elements.length; i++) {
-      elements[i].classList.remove(this.options.selectedClass);
-    }
+    entities.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
     element.classList.add(this.options.selectedClass);
     this.selected = element;
     this.selected.scrollIntoView({ block: 'center', inline: 'center' });
     this.selected.dispatchEvent(mouseOverEvent);
     if (this.options.selectEventName) {
       debug('Invoking user selection event');
-      this.selected.dispatchEvent(this.options.selectEventName);
+      this.selected.dispatchEvent(new Event(this.options.selectEventName, {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+      }));
     }
 
     // Controls if event bubbles or not.
@@ -372,12 +380,11 @@ class Errokees {
 
     if (this.options.activateEventName) {
       debug('Invoking user activation event');
-      const event = new Event(this.options.activateEventName, {
+      this.selected.dispatchEvent(new Event(this.options.activateEventName, {
         view: window,
         bubbles: true,
         cancelable: true,
-      });
-      this.selected.dispatchEvent(event);
+      }));
     }
 
     // Controls if event bubbles or not.
