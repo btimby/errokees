@@ -9,16 +9,19 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'errokees.js',
+    library: 'Errokees',
+    libraryTarget: 'var',
     // library: 'errokees',
-    library: {
+/*     library: {
       name: 'Errokees',
       type: 'umd',
     },
-  },
+ */  },
   plugins: [
     new HtmlWebpackPlugin({
       inject: true,
       template: 'demo/index.html',
+      scriptLoading: 'blocking',
     })
   ],
   devServer: {

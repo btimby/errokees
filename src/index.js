@@ -111,16 +111,12 @@ function getViewportDimensions() {
   return { width, height };
 }
 
-function isInViewport(el) {
-  const vp = getViewportDimensions();
-  const rect = el.getBoundingClientRect();
-
-  return (rect.top >= 0 && rect.left >= 0 && rect.right <= vp.width && rect.bottom <= vp.height);
-}
-
 class Errokees {
   constructor(options) {
-    options = options || defaults;
+    options = {
+      ...defaults,
+      ...options,
+    };
     this.options = options;
     this.movements = {
       [options.up]: 'up',
@@ -348,9 +344,7 @@ class Errokees {
     }
     element.classList.add(this.options.selectedClass);
     this.selected = element;
-    if (!isInViewport(this.selected)) {
-      this.selected.scrollIntoView();
-    }
+    this.selected.scrollIntoView({ block: 'center', inline: 'center' });
     this.selected.dispatchEvent(mouseOverEvent);
     if (this.options.selectEventName) {
       debug('Invoking user selection event');
@@ -378,7 +372,12 @@ class Errokees {
 
     if (this.options.activateEventName) {
       debug('Invoking user activation event');
-      this.selected.dispatchEvent(this.options.activateEventName);
+      const event = new Event(this.options.activateEventName, {
+        view: window,
+        bubbles: true,
+        cancelable: true,
+      });
+      this.selected.dispatchEvent(event);
     }
 
     // Controls if event bubbles or not.
@@ -387,48 +386,38 @@ class Errokees {
 
   _onInput(ev) {
     const { key } = ev;
+    const dir = this.movements[key];
 
-    switch (key) {
-      case this.options.activate:
-          ev.returnValue = this._activate();
-          break;
-  
-      default:
-        const dir = this.movements[key];
+    if (key === this.options.activate) {
+      ev.returnValue = this._activate();
+    } else if (dir) {
+      // If left or right and text input is focused, only exit focus
+      // when cursor is at beginning or end.
+      const focused = isFocused(this.selected);
+      if (focused) {
+        debug('element is focused');
+      }
 
-        if (!dir) {
-          error('Received unknown key:', key);
+      if (this.selectedType.startsWith('input') && focused) {
+        if (dir === 'left' && !isCursorLeft(this.selected)) {
+          return;
+        } else if (dir === 'right' && !isCursorRight(this.selected)) {
           return;
         }
-
-        // If left or right and text input is focused, only exit focus
-        // when cursor is at beginning or end.
-        const focused = isFocused(this.selected);
-        if (focused) {
-          debug('element is focused');
+      } else if (this.selectedType === 'select' && focused) {
+        if (dir === 'up' && !isSelectedTop(this.selected)) {
+          return;
+        } else if (dir === 'down' && !isSelectedBottom(this.selected)) {
+          return;
         }
+      }
 
-        if (this.selectedType.startsWith('input') && focused) {
-          if (dir === 'left' && !isCursorLeft(this.selected)) {
-            return;
-          } else if (dir === 'right' && !isCursorRight(this.selected)) {
-            return;
-          }
-        } else if (this.selectedType === 'select' && focused) {
-          if (dir === 'up' && !isSelectedTop(this.selected)) {
-            return;
-          } else if (dir === 'down' && !isSelectedBottom(this.selected)) {
-            return;
-          }
-        }
-
-        // Prevents scrolling on arrow key.
-        ev.returnValue = this._moveSelection(dir);
-        break;
+      // Prevents scrolling on arrow key.
+      ev.returnValue = this._moveSelection(dir);
     }
 
     return ev.returnValue;
   }
 }
 
-module.exports = Errokees;
+export default Errokees;
