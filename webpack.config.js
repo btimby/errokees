@@ -8,15 +8,10 @@ module.exports = {
   mode: 'none',
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'errokees.js',
+    filename: 'index.js',
     library: 'Errokees',
-    libraryTarget: 'var',
-    // library: 'errokees',
-/*     library: {
-      name: 'Errokees',
-      type: 'umd',
-    },
- */  },
+    libraryTarget: 'umd',
+  },
   plugins: [
     new HtmlWebpackPlugin({
       inject: true,

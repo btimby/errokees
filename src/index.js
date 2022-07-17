@@ -20,6 +20,7 @@ const defaults = {
   origin: 'right',
   keyEventName: 'keydown',
   selectEventName: null,
+  deselectEventName: null,
   activateEventName: null,
 }
 
@@ -82,6 +83,7 @@ class Errokees {
   disable() {
     document.removeEventListener(this.options.eventName, this._inputHandler, false);
     this._mObserver.disconnect();
+    this._selectable.clear();
   }
 
   _moveSelection(dir) {
@@ -197,16 +199,16 @@ class Errokees {
     // Select new element.
     this.selectable.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
     element.classList.add(this.options.selectedClass);
+    if (this.selected && this.options.deselectEventName) {
+      utils.debug('Invoking user deselection event');
+      utils.raiseEvent(this.selected, this.options.deselectEventName);
+    }
     this.selected = element;
     this.selected.scrollIntoView({ block: 'center', inline: 'center' });
     this.selected.dispatchEvent(mouseOverEvent);
     if (this.options.selectEventName) {
       utils.debug('Invoking user selection event');
-      this.selected.dispatchEvent(new Event(this.options.selectEventName, {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-      }));
+      utils.raiseEvent(this.selected, this.options.selectEventName);
     }
 
     // Controls if event bubbles or not.
@@ -230,11 +232,7 @@ class Errokees {
 
     if (this.options.activateEventName) {
       utils.debug('Invoking user activation event');
-      this.selected.dispatchEvent(new Event(this.options.activateEventName, {
-        view: window,
-        bubbles: true,
-        cancelable: true,
-      }));
+      utils.raiseEvent(this.selected, this.options.activateEventName);
     }
 
     // Controls if event bubbles or not.

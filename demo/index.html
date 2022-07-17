@@ -59,7 +59,7 @@
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
-        <div class="card errokees-selectable"></div>
+        <div class="card errokees-selectable"><a id="selectableLink">Select my parent!</a></div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
     </body>
@@ -69,7 +69,17 @@
     We are using all the defaults. If you like, you can override
     the keys, classes and a few other items using an options object.
     */
-    var ek = new Errokees.default();
+    var ek = new Errokees.default({
+        selectEventName: 'errokees-select',
+        deselectEventName: 'errokees-deselect',
+    });
 
-    </script>
+    var link = document.getElementById('selectableLink');
+    link.addEventListener('errokees-select', function() {
+        console.log('Link selected');
+    });
+    link.addEventListener('errokees-deselect', function() {
+        console.log('Link deselected');
+    });
+</script>
 </html>
