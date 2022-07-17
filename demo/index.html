@@ -59,7 +59,11 @@
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
-        <div class="card errokees-selectable"><a id="selectableLink">Select my parent!</a></div>
+        <div class="card errokees-selectable">
+            <span>
+                <a id="selectableLink">Select my parent!</a>
+            </span>
+        </div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
     </body>
@@ -70,8 +74,14 @@
     the keys, classes and a few other items using an options object.
     */
     var ek = new Errokees.default({
-        selectEventName: 'errokees-select',
-        deselectEventName: 'errokees-deselect',
+        selectEvent: {
+            name: 'errokees-select',
+            recurse: true,
+        },
+        deselectEvent: {
+            name: 'errokees-deselect',
+            recurse: true,
+        },
     });
 
     var link = document.getElementById('selectableLink');

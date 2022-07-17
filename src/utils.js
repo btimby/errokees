@@ -106,18 +106,29 @@ function right(A, B) {
   return (A.left >= B.right);
 }
 
-function raiseEvent(el, eventName) {
-  const event = new Event(eventName, {
+function raiseEventIf(el, eventOptions) {
+  if (!el || !eventOptions) {
+    return;
+  }
+
+  const { name, recurse } = eventOptions;
+  info('Invoking user event:', name, 'on', el);
+
+  const event = new Event(name, {
     view: window,
     bubbles: false,
     cancelable: true,
   });
-  [...el.children].forEach(ch => ch.dispatchEvent(event));
+
+  if (recurse) {
+    [...el.children].forEach(ch => raiseEventIf(ch, eventOptions));
+  }
+
   el.dispatchEvent(event);
 }
 
 export default {
   debug, info, error, overlap, isFocused, isCursorLeft, isCursorRight, 
   isSelectedTop, isSelectedBottom, getViewportDimensions, above, below,
-  left, right, raiseEvent,
+  left, right, raiseEventIf,
 };

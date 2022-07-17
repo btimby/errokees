@@ -19,6 +19,15 @@ module.exports = {
       scriptLoading: 'blocking',
     })
   ],
+  module: {
+    rules: [
+      {
+        test: /\.js$/,
+        use: 'babel-loader',
+        exclude: /node_modules/,
+      },
+    ],
+  },
   devServer: {
     compress: true,
     hot: true,

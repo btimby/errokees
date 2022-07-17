@@ -2,6 +2,7 @@
 Errokees [ah-ro-ki:z]
 */
 "use strict";
+import '@babel/polyfill';
 import utils from './utils';
 
 const defaults = {
@@ -19,9 +20,9 @@ const defaults = {
   // origin (select item by default)
   origin: 'right',
   keyEventName: 'keydown',
-  selectEventName: null,
-  deselectEventName: null,
-  activateEventName: null,
+  selectEvent: null,
+  deselectEvent: null,
+  activateEvent: null,
 }
 
 class Errokees {
@@ -45,9 +46,11 @@ class Errokees {
     this._mObserver.observe(document, {
       subtree: true,
       childList: true,
-    })
-    if (options.origin) {
+    });
+    if (typeof options.origin === 'string') {
       this._moveSelection(options.origin);
+    } else if (options.origin) {
+      this.select(options.origin);
     }
     this._inputHandler = this._onInput.bind(this);
     document.addEventListener(this.options.keyEventName, this._inputHandler, false);
@@ -123,7 +126,7 @@ class Errokees {
     const toSelect = this._cast(origin, dir)
     if (toSelect) {
       // Selecting new element.
-      this._select(toSelect);
+      this.select(toSelect);
     } else {
       utils.info('Nothing to select')
     }
@@ -173,7 +176,9 @@ class Errokees {
     return best && best.selectable;
   }
 
-  _select(element) {
+  select(entity) {
+    utils.info('Selecting entity:', entity);
+
     const mouseOverEvent = new MouseEvent('mouseover', {
       view: window,
       bubbles: true,
@@ -185,7 +190,8 @@ class Errokees {
       cancelable: true,
     });
 
-    // Deselect current element.
+    // Deselect current entity.
+    utils.raiseEventIf(this.selected, this.options.deselectEvent);
     if (this.selected) {
       if (this.selectedType.startsWith('input')) {
         this.selected.blur();
@@ -195,28 +201,21 @@ class Errokees {
       }
       this.selected.dispatchEvent(mouseOutEvent);
     }
-
-    // Select new element.
     this.selectable.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
-    element.classList.add(this.options.selectedClass);
-    if (this.selected && this.options.deselectEventName) {
-      utils.debug('Invoking user deselection event');
-      utils.raiseEvent(this.selected, this.options.deselectEventName);
-    }
-    this.selected = element;
+
+    // Select new entity.
+    this.selected = entity;
+    this.selected.classList.add(this.options.selectedClass);
     this.selected.scrollIntoView({ block: 'center', inline: 'center' });
     this.selected.dispatchEvent(mouseOverEvent);
-    if (this.options.selectEventName) {
-      utils.debug('Invoking user selection event');
-      utils.raiseEvent(this.selected, this.options.selectEventName);
-    }
+    utils.raiseEventIf(this.selected, this.options.selectEvent);
 
     // Controls if event bubbles or not.
     return false;
   }
 
   _activate() {
-    utils.debug('Activating selected item', this.selectedType);
+    utils.info('Activating selected entity:', this.selected);
 
     if (this.selectedType.startsWith('input')) {
       this.selected.focus();
@@ -229,11 +228,7 @@ class Errokees {
     } else {
       utils.error('No special handling');
     }
-
-    if (this.options.activateEventName) {
-      utils.debug('Invoking user activation event');
-      utils.raiseEvent(this.selected, this.options.activateEventName);
-    }
+    utils.raiseEventIf(this.selected, this.options.activateEvent);
 
     // Controls if event bubbles or not.
     return this.selectedType === 'select';
@@ -275,16 +270,20 @@ class Errokees {
   }
 
   _onMutation(records) {
+    utils.debug('Mutation occurred');
+
     records.forEach(record => {
       // console.log(record.addedNodes);
       record.addedNodes.forEach(node => {
         if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+          utils.info('Adding entity:', node, 'from mutation');
           this.selectable.add(node);
         }
       });
 
       record.removedNodes.forEach(node => {
         if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+          utils.info('Removing entity:', node, 'from mutation')
           this.selectable.delete(node);
         }
       });
