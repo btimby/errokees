@@ -1,20 +1,46 @@
-function log(level, ...args) {
-  if (!localStorage.logLevel || localStorage.logLevel < level) {
-      return;
-  }
-  console.log('[errokees]', ...args);
+const LOG_LEVELS = {
+  'error': 0,
+  'warn': 1,
+  'info': 2,
+  'debug': 3,
+};
+
+function _shouldLog(level) {
+  return (localStorage.errokeesLogLevel && localStorage.errokeesLogLevel >= level);
 }
 
 function debug(...args) {
-  log(3, ...args);
+  if (!_shouldLog(3)) return;
+  console.log('[errokees]', ...args);
 }
 
 function info(...args) {
-  log(2, ...args);
+  if (!_shouldLog(2)) return;
+  console.info('[errokees]', ...args);
+}
+
+function warn(...args) {
+  if (!_shouldLog(1)) return;
+  console.warn('[errokees]', ...args);
 }
 
 function error(...args) {
-  log(1, ...args);
+  console.error('[errokees]', ...args);
+}
+
+function setLogLevel(level) {
+  if (typeof level === 'string') {
+    let newLevel = level.toLowerCase();
+    newLevel = LOG_LEVELS[newLevel];
+    if (!newLevel) {
+      throw new Error(`Invalid log level string: ${level}`);
+    }
+    level = newLevel;
+  } else if (level < 0 || level > 3) {
+    throw new Error(`Invalid numeric log level: ${level}`);
+  }
+
+  localStorage.errokeesLogLevel = level;
 }
 
 function overlap(A, B, dir) {
@@ -128,7 +154,7 @@ function raiseEventIf(el, eventOptions) {
 }
 
 export default {
-  debug, info, error, overlap, isFocused, isCursorLeft, isCursorRight, 
-  isSelectedTop, isSelectedBottom, getViewportDimensions, above, below,
-  left, right, raiseEventIf,
+  debug, info, warn, error, setLogLevel, overlap, isFocused, isCursorLeft,
+  isCursorRight, isSelectedTop, isSelectedBottom, getViewportDimensions,
+  above, below, left, right, raiseEventIf,
 };
