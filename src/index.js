@@ -26,11 +26,12 @@ const defaults = {
 }
 
 class Errokees {
-  constructor(options) {
+  constructor(scope, options) {
     options = {
       ...defaults,
       ...options,
     };
+    this.scope = scope || document;
     this.options = options;
     this.movements = {
       [options.up]: 'up',
@@ -40,20 +41,16 @@ class Errokees {
     }
     this._selected = null;
     this._selectedType = null;
-    this._selectable = new Set([...document.getElementsByClassName(this.options.selectableClass)]);
-    this._mObserver = new MutationObserver(this._onMutation.bind(this));
-    // NOTE: perhaps watch attributes too, to watch for our class being toggled.
-    this._mObserver.observe(document, {
-      subtree: true,
-      childList: true,
-    });
+    this._selectable = new Set([...this.scope.getElementsByClassName(this.options.selectableClass)]);
     if (typeof options.origin === 'string') {
       this._moveSelection(options.origin);
     } else if (options.origin) {
       this.select(options.origin);
     }
+    this._mObserver = null;
     this._inputHandler = this._onInput.bind(this);
-    document.addEventListener(this.options.keyEventName, this._inputHandler, false);
+    this._paused = true;
+    this.resume();
   }
 
   get selected() {
@@ -83,9 +80,34 @@ class Errokees {
     return this._selectable;
   }
 
-  disable() {
-    document.removeEventListener(this.options.eventName, this._inputHandler, false);
+  pause() {
+    if (this._paused) {
+      return;
+    }
+    this.scope.removeEventListener(this.options.keyEventName, this._inputHandler, true);
     this._mObserver.disconnect();
+    this._mObserver = null;
+    this._paused = true;
+    utils.info('Paused')
+  }
+
+  resume() {
+    if (!this._paused) {
+      return;
+    }
+    this.scope.addEventListener(this.options.keyEventName, this._inputHandler, true);
+    this._mObserver = new MutationObserver(this._onMutation.bind(this));
+    // NOTE: perhaps watch attributes too, to watch for our class being toggled.
+    this._mObserver.observe(this.scope, {
+      subtree: true,
+      childList: true,
+    });
+    this._paused = false;
+    utils.info('Resumed')
+  }
+
+  destroy() {
+    this.pause();
     this._selectable.clear();
   }
 
@@ -233,16 +255,15 @@ class Errokees {
     utils.debug('Mutation occurred');
 
     records.forEach(record => {
-      // console.log(record.addedNodes);
       record.addedNodes.forEach(node => {
-        if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+        if (node && node.classList && node.classList.contains(this.options.selectableClass)) {
           utils.info('Adding entity:', node, 'from mutation');
           this.selectable.add(node);
         }
       });
 
       record.removedNodes.forEach(node => {
-        if (typeof node === Element && node.classList.contains(this.options.selectableClass)) {
+        if (node && node.classList && node.classList.contains(this.options.selectableClass)) {
           utils.info('Removing entity:', node, 'from mutation')
           this.selectable.delete(node);
         }

@@ -48,32 +48,40 @@
     </head>
 
     <body>
-        <div class="card errokees-selectable" data-ek-selected-class="errokees-extra1 errokees-extra2"></div>
-        <div class="card">
-            <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
-            <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
-        </div>
-        <div class="card">
-            <div><input type="text" class="errokees-selectable"/></div>
-            <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
-            <div>
-                <select class="errokees-selectable">
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                </select>
+        <div id="container">
+            <div class="card errokees-selectable" data-ek-selected-class="errokees-extra1 errokees-extra2"></div>
+            <div class="card">
+                <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
+                <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
             </div>
+            <div class="card">
+                <div><input type="text" class="errokees-selectable"/></div>
+                <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
+                <div>
+                    <select class="errokees-selectable">
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+                </div>
+            </div>
+            <div id="clickableDiv" class="card errokees-selectable" data-ek-activated-event="click"></div>
+            <div class="card errokees-selectable"></div>
+            <div class="card errokees-selectable"></div>
+            <div class="card errokees-selectable">
+                <span>
+                    <a id="selectableLink">Select my parent!</a>
+                </span>
+            </div>
+            <div class="card errokees-selectable"></div>
+            <div class="card errokees-selectable"></div>
         </div>
-        <div id="clickableDiv" class="card errokees-selectable" data-ek-activated-event="click"></div>
-        <div class="card errokees-selectable"></div>
-        <div class="card errokees-selectable"></div>
-        <div class="card errokees-selectable">
-            <span>
-                <a id="selectableLink">Select my parent!</a>
-            </span>
+        <div>
+            <button id='addButton'>Add</button>
+            <button id='delButton'>Del</button><br/>
+            <button id='pauseButton'>Pause</button>
+            <button id='resumeButton'>Resume</button>
         </div>
-        <div class="card errokees-selectable"></div>
-        <div class="card errokees-selectable"></div>
     </body>
 
     <script type="text/javascript">
@@ -81,7 +89,7 @@
     We are using all the defaults. If you like, you can override
     the keys, classes and a few other items using an options object.
     */
-    var ek = new Errokees.default({
+    var ek = new Errokees.default(null, {
         selectEvent: {
             name: 'errokees-select',
             recurse: true,
@@ -92,6 +100,8 @@
         },
     });
 
+    var container = document.getElementById('container');
+
     var link = document.getElementById('selectableLink');
     link.addEventListener('errokees-select', function() {
         console.log('Link selected');
@@ -99,9 +109,35 @@
     link.addEventListener('errokees-deselect', function() {
         console.log('Link deselected');
     });
-    var div = document.getElementById('clickableDiv');
-    div.addEventListener('click', function() {
-        alert('Div clicked')
-    });
+    document
+        .getElementById('clickableDiv')
+        .addEventListener('click', function() {
+            alert('Div clicked')
+        });
+
+    document
+        .getElementById('addButton')
+        .addEventListener('click', function() {
+            const newDiv = document.createElement('div');
+            newDiv.classList.add('card');
+            newDiv.classList.add('errokees-selectable');
+            container.appendChild(newDiv);
+        });
+    document
+        .getElementById('delButton')
+        .addEventListener('click', function() {
+            container.removeChild(container.lastChild);
+        });
+
+    document
+        .getElementById('pauseButton')
+        .addEventListener('click', function() {
+            ek.pause();
+        });
+    document
+        .getElementById('resumeButton')
+        .addEventListener('click', function() {
+            ek.resume();
+        });
 </script>
 </html>
