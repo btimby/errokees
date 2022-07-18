@@ -153,8 +153,74 @@ function raiseEventIf(el, eventOptions) {
   el.dispatchEvent(event);
 }
 
+function changeSelection(elFrom, elTo, options) {
+  // Deselect current entity.
+  if (elFrom) {
+    const elFromType = elFrom.tagName.toLowerCase();
+    const extraClasses = elFrom.getAttribute('data-ek-selected-class');
+    if (extraClasses) {
+      extraClasses.split(' ').forEach(cls => elFrom.classList.remove(cls));
+    }
+    elFrom.classList.remove(options.selectedClass);
+    raiseEventIf(elFrom, options.deselectEvent);
+    if (elFromType === 'input' || elFromType === 'select') {
+      elFrom.blur();
+    }
+    elFrom.dispatchEvent(new MouseEvent('mouseout', {
+      view: window,
+      bubbles: true,
+      cancelable: true,
+    }));
+  }
+
+  // Select new entity.
+  const extraEvent = elTo.getAttribute('data-ek-selected-event');
+  const extraClasses = elTo.getAttribute('data-ek-selected-class');
+  if (extraClasses) {
+    extraClasses.split(' ').forEach(cls => elTo.classList.add(cls));
+  }
+  elTo.classList.add(options.selectedClass);
+  elTo.scrollIntoView({ block: 'center', inline: 'center' });
+  elTo.dispatchEvent(new MouseEvent('mouseover', {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+  }));
+  raiseEventIf(elTo, options.selectEvent);
+  if (extraEvent) {
+    elTo.dispatchEvent(new Event(extraEvent));
+  }
+
+  return elTo;
+}
+
+function activateSelection(el, options) {
+  const extra = el.getAttribute('data-ek-activated-event');
+  const elType = el.tagName.toLowerCase();
+  debug('elType:', elType);
+
+  if (elType === 'input') {
+    el.focus();
+  } else if (elType === 'select') {
+    el.focus();
+    // Re-enable key nagivation.
+    el.addEventListener('change', el.blur, { once: true });
+  } else if (elType === 'a' || elType === 'button') {
+    el.click();
+  } else {
+    if (extra) {
+      el.dispatchEvent(new Event(extra));
+    } else {
+      error('No special handling');
+    }
+  }
+
+  raiseEventIf(el, options.activateEvent);
+
+}
+
 export default {
   debug, info, warn, error, setLogLevel, overlap, isFocused, isCursorLeft,
   isCursorRight, isSelectedTop, isSelectedBottom, getViewportDimensions,
-  above, below, left, right, raiseEventIf,
+  above, below, left, right, raiseEventIf, changeSelection, activateSelection,
 };

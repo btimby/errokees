@@ -179,36 +179,7 @@ class Errokees {
   select(entity) {
     utils.info('Selecting entity:', entity);
 
-    const mouseOverEvent = new MouseEvent('mouseover', {
-      view: window,
-      bubbles: true,
-      cancelable: true,
-    });
-    const mouseOutEvent = new MouseEvent('mouseout', {
-      view: window,
-      bubbles: true,
-      cancelable: true,
-    });
-
-    // Deselect current entity.
-    utils.raiseEventIf(this.selected, this.options.deselectEvent);
-    if (this.selected) {
-      if (this.selectedType.startsWith('input')) {
-        this.selected.blur();
-      }
-      if (this.selectedType.startsWith('select')) {
-        this.selected.blur();
-      }
-      this.selected.dispatchEvent(mouseOutEvent);
-    }
-    this.selectable.forEach(ent => { ent.classList.remove(this.options.selectedClass) });
-
-    // Select new entity.
-    this.selected = entity;
-    this.selected.classList.add(this.options.selectedClass);
-    this.selected.scrollIntoView({ block: 'center', inline: 'center' });
-    this.selected.dispatchEvent(mouseOverEvent);
-    utils.raiseEventIf(this.selected, this.options.selectEvent);
+    this.selected = utils.changeSelection(this.selected, entity, this.options);
 
     // Controls if event bubbles or not.
     return false;
@@ -217,18 +188,7 @@ class Errokees {
   _activate() {
     utils.info('Activating selected entity:', this.selected);
 
-    if (this.selectedType.startsWith('input')) {
-      this.selected.focus();
-    } else if (this.selectedType === 'select') {
-      this.selected.focus();
-      // Re-enable key nagivation.
-      this.selected.addEventListener('change', this.selected.blur, { once: true });
-    } else if (this.selectedType === 'a' || this.selectedType === 'button') {
-      this.selected.click();
-    } else {
-      utils.error('No special handling');
-    }
-    utils.raiseEventIf(this.selected, this.options.activateEvent);
+    utils.activateSelection(this.selected, this.options);
 
     // Controls if event bubbles or not.
     return this.selectedType === 'select';

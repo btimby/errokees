@@ -36,11 +36,19 @@
             input.errokees-selected {
                 background-color: white;
             }
+
+            .errokees-extra1 {
+                background-color: white;
+            }
+
+            .errokees-extra2 {
+                border-color: red;
+            }
         </style>
     </head>
 
     <body>
-        <div class="card errokees-selectable"></div>
+        <div class="card errokees-selectable" data-ek-selected-class="errokees-extra1 errokees-extra2"></div>
         <div class="card">
             <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
             <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
@@ -56,7 +64,7 @@
                 </select>
             </div>
         </div>
-        <div class="card errokees-selectable"></div>
+        <div id="clickableDiv" class="card errokees-selectable" data-ek-activated-event="click"></div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable"></div>
         <div class="card errokees-selectable">
@@ -90,6 +98,10 @@
     });
     link.addEventListener('errokees-deselect', function() {
         console.log('Link deselected');
+    });
+    var div = document.getElementById('clickableDiv');
+    div.addEventListener('click', function() {
+        alert('Div clicked')
     });
 </script>
 </html>
