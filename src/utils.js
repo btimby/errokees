@@ -180,7 +180,7 @@ function changeSelection(elFrom, elTo, options) {
     extraClasses.split(' ').forEach(cls => elTo.classList.add(cls));
   }
   elTo.classList.add(options.selectedClass);
-  elTo.scrollIntoView({ block: 'center', inline: 'center' });
+  elTo.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
   elTo.dispatchEvent(new MouseEvent('mouseover', {
     view: window,
     bubbles: true,
@@ -211,7 +211,7 @@ function activateSelection(el, options) {
     if (extra) {
       el.dispatchEvent(new Event(extra));
     } else {
-      error('No special handling');
+      warn('No special handling');
     }
   }
 

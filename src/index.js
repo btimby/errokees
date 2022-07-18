@@ -246,6 +246,8 @@ class Errokees {
 
       // Prevents scrolling on arrow key.
       ev.returnValue = this._moveSelection(dir);
+    } else {
+      utils.info('Unknown key:', key);
     }
 
     return ev.returnValue;
