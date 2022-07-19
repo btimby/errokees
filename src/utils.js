@@ -137,7 +137,7 @@ function raiseEventIf(el, eventOptions) {
     return;
   }
 
-  const { name, recurse } = eventOptions;
+  const { name, recurse, target } = eventOptions;
   info('Invoking user event:', name, 'on', el);
 
   const event = new Event(name, {
@@ -150,42 +150,58 @@ function raiseEventIf(el, eventOptions) {
     [...el.children].forEach(ch => raiseEventIf(ch, eventOptions));
   }
 
-  el.dispatchEvent(event);
+  const raiseOn = (!target) ? [el] : el.querySelectorAll(target);
+  raiseOn.forEach(o => o.dispatchEvent(event));
 }
 
-function changeSelection(elFrom, elTo, options) {
-  // Deselect current entity.
-  if (elFrom) {
-    const elFromType = elFrom.tagName.toLowerCase();
-    const extraClasses = elFrom.getAttribute('data-ek-selected-class');
-    if (extraClasses) {
-      extraClasses.split(' ').forEach(cls => elFrom.classList.remove(cls));
-    }
-    elFrom.classList.remove(options.selectedClass);
-    raiseEventIf(elFrom, options.deselectEvent);
-    if (elFromType === 'input' || elFromType === 'select') {
-      elFrom.blur();
-    }
+function readDataEvent(el, prefix) {
+  const eventName = el.getAttribute(`data-ek-${prefix}-event-name`);
+  const eventRecurse = el.getAttribute(`data-ek-${prefix}-event-recurse`);
+  const eventTarget = el.getAttribute(`data-ek-${prefix}-event-target`);
+  if (!eventName) {
+    return;
   }
+  return {
+    name: eventName,
+    recurse: (eventRecurse),
+    target: eventTarget,
+  }
+}
 
-  // Select new entity.
-  const extraEvent = elTo.getAttribute('data-ek-selected-event');
-  const extraClasses = elTo.getAttribute('data-ek-selected-class');
-  if (extraClasses) {
-    extraClasses.split(' ').forEach(cls => elTo.classList.add(cls));
+function readDataClasses(el, prefix) {
+  const classes = [];
+  const eventClasses = el.getAttribute(`data-ek-${prefix}-class`);
+  if (eventClasses) {
+    eventClasses.split(' ').forEach(o => classes.push(o));
   }
-  elTo.classList.add(options.selectedClass);
-  elTo.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-  raiseEventIf(elTo, options.selectEvent);
-  if (extraEvent) {
-    elTo.dispatchEvent(new Event(extraEvent));
-  }
+  return classes;
+}
 
-  return elTo;
+function deselect(el, options) {
+  const elType = el.tagName.toLowerCase();
+  readDataClasses(el, 'select').forEach(cls => el.classList.remove(cls));
+  if (options.selectedClass) {
+    el.classList.remove(options.selectedClass);
+  }
+  raiseEventIf(el, options.deselectEvent);
+  raiseEventIf(el, readDataEvent(el, 'deselect'))
+  if (elType === 'input' || elType === 'select') {
+    el.blur();
+  }
+}
+
+function select(el, options) {
+  readDataClasses(el, 'select').forEach(cls => el.classList.add(cls));
+  if (options.selectedClass) {
+    el.classList.add(options.selectedClass);
+  }
+  el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  raiseEventIf(el, options.selectEvent);
+  raiseEventIf(el, readDataEvent(el, 'select'))
 }
 
 function activateSelection(el, options) {
-  const extra = el.getAttribute('data-ek-activated-event');
+  const extra = readDataEvent(el, 'activate');
   const elType = el.tagName.toLowerCase();
   debug('elType:', elType);
 
@@ -199,7 +215,7 @@ function activateSelection(el, options) {
     el.click();
   } else {
     if (extra) {
-      el.dispatchEvent(new Event(extra));
+      raiseEventIf(el, extra);
     } else {
       warn('No special handling');
     }
@@ -212,5 +228,5 @@ function activateSelection(el, options) {
 export default {
   debug, info, warn, error, setLogLevel, overlap, isFocused, isCursorLeft,
   isCursorRight, isSelectedTop, isSelectedBottom, getViewportDimensions,
-  above, below, left, right, raiseEventIf, changeSelection, activateSelection,
+  above, below, left, right, raiseEventIf, select, deselect, activateSelection,
 };

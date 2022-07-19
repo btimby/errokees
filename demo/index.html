@@ -49,7 +49,10 @@
 
     <body>
         <div id="container">
-            <div class="card errokees-selectable" data-ek-selected-class="errokees-extra1 errokees-extra2"></div>
+            <div
+                class="card errokees-selectable"
+                data-ek-select-class="errokees-extra1 errokees-extra2"
+            ></div>
             <div class="card">
                 <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
                 <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
@@ -65,7 +68,13 @@
                     </select>
                 </div>
             </div>
-            <div id="clickableDiv" class="card errokees-selectable" data-ek-activated-event="click"></div>
+            <div
+                class="card errokees-selectable"
+                data-ek-activate-event-name="click"
+                data-ek-activate-event-target="a"
+            >
+                <a id="clickableInnerLink"></a>
+            </div>
             <div class="card errokees-selectable"></div>
             <div class="card errokees-selectable"></div>
             <div class="card errokees-selectable">
@@ -110,9 +119,9 @@
         console.log('Link deselected');
     });
     document
-        .getElementById('clickableDiv')
+        .getElementById('clickableInnerLink')
         .addEventListener('click', function() {
-            alert('Div clicked')
+            alert('Inner link clicked')
         });
 
     document
