@@ -166,11 +166,6 @@ function changeSelection(elFrom, elTo, options) {
     if (elFromType === 'input' || elFromType === 'select') {
       elFrom.blur();
     }
-    elFrom.dispatchEvent(new MouseEvent('mouseout', {
-      view: window,
-      bubbles: true,
-      cancelable: true,
-    }));
   }
 
   // Select new entity.
@@ -181,11 +176,6 @@ function changeSelection(elFrom, elTo, options) {
   }
   elTo.classList.add(options.selectedClass);
   elTo.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-  elTo.dispatchEvent(new MouseEvent('mouseover', {
-    view: window,
-    bubbles: true,
-    cancelable: true,
-  }));
   raiseEventIf(elTo, options.selectEvent);
   if (extraEvent) {
     elTo.dispatchEvent(new Event(extraEvent));

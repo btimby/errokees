@@ -43,7 +43,7 @@ class Errokees {
     this._selectedType = null;
     this._selectable = new Set([...this.scope.getElementsByClassName(this.options.selectableClass)]);
     if (typeof options.origin === 'string') {
-      this._moveSelection(options.origin);
+      this.moveSelection(options.origin);
     } else if (options.origin) {
       this.select(options.origin);
     }
@@ -111,7 +111,7 @@ class Errokees {
     this._selectable.clear();
   }
 
-  _moveSelection(dir) {
+  moveSelection(dir) {
     utils.debug('Moving', dir);
     let origin;
 
@@ -245,7 +245,7 @@ class Errokees {
       }
 
       // Prevents scrolling on arrow key.
-      ev.returnValue = this._moveSelection(dir);
+      ev.returnValue = this.moveSelection(dir);
     } else {
       utils.info('Unknown key:', key);
     }
@@ -261,6 +261,8 @@ class Errokees {
         if (node && node.classList && node.classList.contains(this.options.selectableClass)) {
           utils.info('Adding entity:', node, 'from mutation');
           this.selectable.add(node);
+        } else {
+          utils.info('Skipping entity:', node, 'from mutation');
         }
       });
 
