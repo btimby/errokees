@@ -19,10 +19,15 @@ const defaults = {
 
   // origin (select item by default)
   origin: 'right',
+
+  // Define events.
   keyEventName: 'keydown',
   selectEvent: null,
   deselectEvent: null,
   activateEvent: null,
+
+  // Scroll to item when selected?
+  scroll: true,
 }
 
 class Errokees {

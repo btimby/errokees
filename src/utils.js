@@ -191,11 +191,14 @@ function deselect(el, options) {
 }
 
 function select(el, options) {
+  const scroll = el.getAttribute('data-ek-scroll');
   readDataClasses(el, 'select').forEach(cls => el.classList.add(cls));
   if (options.selectedClass) {
     el.classList.add(options.selectedClass);
   }
-  el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  if (scroll || options.scroll) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  }
   raiseEventIf(el, options.selectEvent);
   raiseEventIf(el, readDataEvent(el, 'select'))
 }
@@ -222,7 +225,6 @@ function activateSelection(el, options) {
   }
 
   raiseEventIf(el, options.activateEvent);
-
 }
 
 export default {
