@@ -201,7 +201,14 @@ class Errokees {
   select(entity) {
     utils.info('Selecting entity:', entity);
 
-    this.selected = utils.changeSelection(this.selected, entity, this.options);
+    if (this.selected) {
+      // Deselect current entity.
+      utils.deselect(this.selected, this.options);
+    }
+
+    // Select new entity.
+    utils.select(entity, this.options);
+    this.selected = entity;
 
     // Controls if event bubbles or not.
     return false;
@@ -261,8 +268,12 @@ class Errokees {
         if (node && node.classList && node.classList.contains(this.options.selectableClass)) {
           utils.info('Adding entity:', node, 'from mutation');
           this.selectable.add(node);
-        } else {
-          utils.info('Skipping entity:', node, 'from mutation');
+        }
+        if (node && node.getElementsByClassName) {
+          [...node.getElementsByClassName(this.options.selectableClass)].forEach(child => {
+            utils.info('Adding entity child:', child, 'from mutation')
+            this.selectable.add(child);
+          })
         }
       });
 
@@ -270,6 +281,12 @@ class Errokees {
         if (node && node.classList && node.classList.contains(this.options.selectableClass)) {
           utils.info('Removing entity:', node, 'from mutation')
           this.selectable.delete(node);
+        }
+        if (node && node.getElementsByClassName) {
+          [...node.getElementsByClassName(this.options.selectableClass)].forEach(child => {
+            utils.info('Removing entity child:', child, 'from mutation')
+            this.selectable.delete(child);
+          })
         }
       });
     });
