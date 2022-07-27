@@ -1,6 +1,6 @@
 {
   "name": "errokees",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Arrow key navigation and selection in browser.",
   "main": "dist/index.js",
   "files": [
