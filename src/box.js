@@ -72,38 +72,20 @@ class Box {
     return Math.floor(Math.sqrt(D));
   }
 
-  vContains(other, overlap=false, outside=false) {
-    if (!overlap) {
-      return (
-        ((this.left < other.left && this.left < other.right) &&
-         (this.right > other.left && this.right > other.right)) ||
-         (this.left === other.left && this.right === other.right) ||
-         (outside && other.left < this.left && other.right > this.right)
-      );
-    } else {
-      return (
-        (this.left <= other.left && this.right >= other.left) ||
-        (this.left <= other.right && this.right >= other.right) ||
-        (outside && other.left < this.left && other.right > this.right)
-      );
-    }
+  vContains(other, outside=false) {
+    return (
+      (this.left < other.left && this.right > other.right) ||
+      (this.left === other.left && this.right === other.right) ||
+      (outside && other.left < this.left && other.right > this.right)
+    );
   }
 
-  hContains(other, overlap=false, outside=false) {
-    if (!overlap) {
-      return (
-        ((this.bottom > other.bottom && this.top < other.top) &&
-         (this.top < other.top && this.bottom > other.top)) ||
-         (this.bottom === other.bottom && this.top === other.top) ||
-         (outside && other.top < this.top && other.bottom > this.bottom)
-      );
-    } else {
-      return (
-        (this.bottom >= other.bottom && this.top <= other.top) ||
-        (this.top <= other.top && this.bottom >= other.top) ||
-        (outside && other.top < this.top && other.bottom > this.bottom)
-      );
-    }
+  hContains(other, outside=false) {
+    return (
+      (this.bottom > other.bottom && this.top < other.top) ||
+      (this.bottom === other.bottom && this.top === other.top) ||
+      (outside && other.top < this.top && other.bottom > this.bottom)
+    );
   }
 }
 

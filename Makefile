@@ -25,6 +25,11 @@ publish: build
 	npm publish
 
 
+.PHONY: test
+test: node_modules
+	npm run test
+
+
 .PHONY: clean
 clean:
 	rm -rf dist/ node_modules/

@@ -147,9 +147,6 @@ class Errokees {
       }
     }
 
-    utils.debug(`origin.top=${origin.top}, origin.left=${origin.left}`);
-    utils.debug(`origin.bottom=${origin.bottom}, origin.right=${origin.right}`);
-
     // Reach out and look for collisions.
     const toSelect = this._cast(origin, dir)
     if (toSelect) {
@@ -172,7 +169,7 @@ class Errokees {
     if (dir === 'up') {
       // Only things above origin:
       let above = selectable.filter(o => {
-        return origin.vContains(o, false, true) && origin.isBelow(o, true);
+        return origin.vContains(o, true) && origin.isBelow(o, true);
       });
       utils.debug("Found", above.length, "items contained above")
       if (above.length === 0) {
@@ -208,7 +205,7 @@ class Errokees {
 
     } else if (dir === 'down') {
       let below = selectable.filter(o => {
-        return origin.vContains(o, false, true) && origin.isAbove(o, true);
+        return origin.vContains(o, true) && origin.isAbove(o, true);
       });
       utils.debug("Found", below.length, "items contained below");
       if (below.length === 0) {
@@ -217,7 +214,6 @@ class Errokees {
           return origin.distance(a) - origin.distance(b);
         });
         utils.debug("Found", below.length, "items below");
-        console.log(below);
       } else {
         below.sort((a, b) => {
           return origin.vDistance(a) - origin.vDistance(b);
@@ -245,7 +241,7 @@ class Errokees {
 
     } else if (dir === 'left') {
       let left = selectable.filter(o => {
-        return origin.hContains(o, false, true) && origin.isRightOf(o, false);
+        return origin.hContains(o, true) && origin.isRightOf(o, false);
       });
       utils.debug("Found", left.length, "items contained to left");
       if (left.length === 0) {
@@ -281,7 +277,7 @@ class Errokees {
 
     } else if (dir === 'right') {
       let right = selectable.filter(o => {
-        return origin.hContains(o, false, true) && origin.isLeftOf(o, false);
+        return origin.hContains(o, true) && origin.isLeftOf(o, false);
       });
       utils.debug("Found", right.length, "items contained to right")
       if (right.length === 0) {
