@@ -4,6 +4,7 @@ Errokees [ah-ro-ki:z]
 "use strict";
 import '@babel/polyfill';
 import utils from './utils';
+import Box from './box';
 
 const defaults = {
   // keys...
@@ -121,8 +122,8 @@ class Errokees {
     let origin;
 
     if (this.selected) {
-      // Use location of selected item as origin.
-      origin = this.selected.getBoundingClientRect();
+      // Use selected item as origin.
+      origin = this.selected;
 
     } else {
       // Nothing is currently selected, so use a viewport edge as origin.
@@ -160,47 +161,161 @@ class Errokees {
   }
 
   _cast(origin, dir) {
-    let best, dirFunc, bestFunc;
+    origin = new Box(origin);
+    let selectable = Array.from(this.selectable).map(o => new Box(o));
 
-    utils.debug("Searching", this.selectable.size, "items");
+    if (origin.element) {
+      selectable = selectable.filter(o => origin.element !== o.element);
+    }
+    utils.debug("Searching", selectable.length, "items");
 
     if (dir === 'up') {
-      dirFunc = utils.above;
-      bestFunc = utils.below;
+      // Only things above origin:
+      let above = selectable.filter(o => {
+        return origin.vContains(o, false, true) && origin.isBelow(o, true);
+      });
+      utils.debug("Found", above.length, "items contained above")
+      if (above.length === 0) {
+        above = selectable.filter(o => origin.isBelow(o));
+        above.sort((a, b) => {
+          return origin.distance(a) - origin.distance(b);
+        });
+        utils.debug("Found", above.length, "items above");
+      } else {
+        above.sort((a, b) => {
+          return origin.vDistance(a) - origin.vDistance(b);
+        });
+      }
+      const best = above.length && above[0];
+      if (best) {
+        const bBox = new Box({
+          top: origin.top,
+          left: best.left,
+          right: best.right,
+          bottom: best.bottom,
+          width: 0, height: 0,
+        });
+        const between = selectable.filter(o => {
+          return bBox.hContains(o);
+        });
+        utils.debug("Found", between.length, "items between closest item")
+        between.sort(o => origin.hDistance(o));
+        if (between.length) {
+          return between[0].element;
+        }
+        return best.element;
+      }
+
     } else if (dir === 'down') {
-      dirFunc = utils.below;
-      bestFunc = utils.above;
+      let below = selectable.filter(o => {
+        return origin.vContains(o, false, true) && origin.isAbove(o, true);
+      });
+      utils.debug("Found", below.length, "items contained below");
+      if (below.length === 0) {
+        below = selectable.filter(o => origin.isAbove(o));
+        below.sort((a, b) => {
+          return origin.distance(a) - origin.distance(b);
+        });
+        utils.debug("Found", below.length, "items below");
+        console.log(below);
+      } else {
+        below.sort((a, b) => {
+          return origin.vDistance(a) - origin.vDistance(b);
+        });
+      }
+      const best = below.length && below[0];
+      if (best) {
+        const bBox = new Box({
+          top: best.top,
+          left: best.left,
+          right: best.right,
+          bottom: origin.bottom,
+          width: 0, height: 0,
+        });
+        const between = selectable.filter(o => {
+          return bBox.hContains(o);
+        });
+        utils.debug("Found", between.length, "items between closest item")
+        between.sort(o => origin.hDistance(o));
+        if (between.length) {
+          return between[0].element;
+        }
+        return best.element;
+      }
+
     } else if (dir === 'left') {
-      dirFunc = utils.left;
-      bestFunc = utils.right;
+      let left = selectable.filter(o => {
+        return origin.hContains(o, false, true) && origin.isRightOf(o, false);
+      });
+      utils.debug("Found", left.length, "items contained to left");
+      if (left.length === 0) {
+        left = selectable.filter(o => origin.isRightOf(o));
+        left.sort((a, b) => {
+          return origin.distance(a) - origin.distance(b);
+        });
+        utils.debug("Found", left.length, "items to left");
+      } else {
+        left.sort((a, b) => {
+          return origin.hDistance(a) - origin.hDistance(b);
+        });
+      }
+      const best = left.length && left[0];
+      if (best) {
+        const bBox = new Box({
+          top: best.top,
+          left: best.right,
+          right: origin.left,
+          bottom: best.bottom,
+          width: 0, height: 0,
+        });
+        const between = selectable.filter(o => {
+          return bBox.vContains(o);
+        });
+        utils.debug("Found", between.length, "items between closest item")
+        between.sort(o => origin.vDistance(o));
+        if (between.length) {
+          return between[0].element;
+        }
+        return best.element;
+      }
+
     } else if (dir === 'right') {
-      dirFunc = utils.right;
-      bestFunc = utils.left;
+      let right = selectable.filter(o => {
+        return origin.hContains(o, false, true) && origin.isLeftOf(o, false);
+      });
+      utils.debug("Found", right.length, "items contained to right")
+      if (right.length === 0) {
+        right = selectable.filter(o => origin.isLeftOf(o));
+        right.sort((a, b) => {
+          return origin.distance(a) - origin.distance(b);
+        });
+        utils.debug("Found", right.length, "items to right");
+      } else {
+        right.sort((a, b) => {
+          return origin.hDistance(a) - origin.hDistance(b);
+        });
+      }
+      const best = right.length && right[0];
+      if (best) {
+        const bBox = new Box({
+          top: best.top,
+          left: best.left,
+          right: origin.right,
+          bottom: best.bottom,
+          width: 0, height: 0,
+        });
+        const between = selectable.filter(o => {
+          return bBox.vContains(o);
+        });
+        utils.debug("Found", between.length, "items between closest item")
+        between.sort(o => origin.vDistance(o));
+        if (between.length) {
+          return between[0].element;
+        }
+        return best.element;
+      }
+
     }
-    
-    this.selectable.forEach(selectable => {
-      if (this.selected === selectable) {
-        return;
-      }
-      const rect = selectable.getBoundingClientRect();
-      const area = utils.overlap(origin, rect, dir);
-
-      utils.debug(`area=${area}`);
-
-      if (
-            // Left or right should be between origin left & right.
-            area &&
-            // Must be above origin.
-            dirFunc(rect, origin) &&
-            // Is first match or better than current best.
-            (!best || bestFunc(rect, best.rect))
-        ) {
-        utils.debug("Choosing best option");
-        best = { selectable, rect, area };
-      }
-    });
-
-    return best && best.selectable;
   }
 
   select(entity) {

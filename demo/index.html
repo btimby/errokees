@@ -54,12 +54,10 @@
                 data-ek-select-class="errokees-extra1 errokees-extra2"
             ></div>
             <div class="card">
-                <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
                 <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
             </div>
             <div class="card">
                 <div><input type="text" class="errokees-selectable"/></div>
-                <a href="http://www.google.com/" class="errokees-selectable">Selectable link</a><br/>
                 <div>
                     <select class="errokees-selectable">
                         <option value="1">One</option>
@@ -99,6 +97,7 @@
     the keys, classes and a few other items using an options object.
     */
     var ek = new Errokees.default(null, {
+        origin: 'down',
         selectEvent: {
             name: 'errokees-select',
             recurse: true,
