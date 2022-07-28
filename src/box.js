@@ -41,9 +41,11 @@ class Box {
     if (from === 'center') tStart = this.top + this.height / 2;
     else if (from === 'top') tStart = this.top;
     else if (from === 'bottom') tStart = this.bottom;
+    else throw new Error(`Invalid from value ${from}`);
     if (to === 'center') oStart = other.top + other.height / 2;
     else if (to === 'top') oStart = other.top;
     else if (to === 'bottom') oStart = other.bottom;
+    else throw new Error(`Invalid to value ${to}`);
 
     return Math.abs(tStart - oStart);
   }
@@ -54,9 +56,11 @@ class Box {
     if (from === 'center') tStart = this.left + this.width / 2;
     else if (from === 'left') tStart = this.left;
     else if (from === 'right') tStart = this.right;
+    else throw new Error(`Invalid from value ${from}`);
     if (to === 'center') oStart = other.left + other.width / 2;
     else if (to === 'left') oStart = other.left;
     else if (to === 'right') oStart = other.right;
+    else throw new Error(`Invalid to value ${to}`);
 
     return Math.abs(tStart - oStart);
   }

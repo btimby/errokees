@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "test": "mocha tests/**/test_*.js",
+    "debug": "mocha --inspect-brk tests/**/test_*.js",
     "build": "webpack --mode=development",
     "lint": "eslint",
     "start": "webpack-dev-server --open --mode=development --config ./webpack.config.js",

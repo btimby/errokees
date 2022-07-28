@@ -30,6 +30,11 @@ test: node_modules
 	npm run test
 
 
+.PHONY: debug
+debug: node_modules
+	npm run debug
+
+
 .PHONY: clean
 clean:
 	rm -rf dist/ node_modules/
