@@ -3,8 +3,8 @@ Errokees [ah-ro-ki:z]
 */
 "use strict";
 import '@babel/polyfill';
-import utils from './utils';
-import Box from './box';
+import utils from './utils.js';
+import Box from './box.js';
 
 const defaults = {
   // keys...
