@@ -172,35 +172,22 @@ class Errokees {
         return origin.vContains(o, true) && origin.isBelow(o, true);
       });
       utils.debug("Found", above.length, "items contained above")
-      if (above.length === 0) {
-        above = selectable.filter(o => origin.isBelow(o));
-        above.sort((a, b) => {
-          return origin.distance(a) - origin.distance(b);
-        });
-        utils.debug("Found", above.length, "items above");
-      } else {
-        above.sort((a, b) => {
-          return origin.vDistance(a) - origin.vDistance(b);
-        });
-      }
+      above.sort((a, b) => {
+        return origin.vDistance(a) - origin.vDistance(b);
+      });
       const best = above.length && above[0];
       if (best) {
         const bBox = new Box({
-          top: origin.top,
+          top: best.bottom,
           left: best.left,
           right: best.right,
-          bottom: best.bottom,
+          bottom: origin.top,
           width: 0, height: 0,
         });
-        const between = selectable.filter(o => {
-          return bBox.hContains(o);
-        });
+        const between = selectable.filter(o => bBox.hContains(o));
         utils.debug("Found", between.length, "items between closest item")
-        between.sort(o => origin.hDistance(o));
-        if (between.length) {
-          return between[0].element;
-        }
-        return best.element;
+        between.sort((a, b) => origin.hDistance(a) - origin.hDistance(b));
+        return (between.length) ? between[0].element : best.element;
       }
 
     } else if (dir === 'down') {
@@ -208,53 +195,32 @@ class Errokees {
         return origin.vContains(o, true) && origin.isAbove(o, true);
       });
       utils.debug("Found", below.length, "items contained below");
-      if (below.length === 0) {
-        below = selectable.filter(o => origin.isAbove(o));
-        below.sort((a, b) => {
-          return origin.distance(a) - origin.distance(b);
-        });
-        utils.debug("Found", below.length, "items below");
-      } else {
-        below.sort((a, b) => {
-          return origin.vDistance(a) - origin.vDistance(b);
-        });
-      }
+      below.sort((a, b) => {
+        return origin.vDistance(a) - origin.vDistance(b);
+      });
       const best = below.length && below[0];
       if (best) {
         const bBox = new Box({
-          top: best.top,
+          top: origin.bottom,
           left: best.left,
           right: best.right,
-          bottom: origin.bottom,
+          bottom: best.top,
           width: 0, height: 0,
         });
-        const between = selectable.filter(o => {
-          return bBox.hContains(o);
-        });
+        const between = selectable.filter(o => bBox.hContains(o));
         utils.debug("Found", between.length, "items between closest item")
-        between.sort(o => origin.hDistance(o));
-        if (between.length) {
-          return between[0].element;
-        }
-        return best.element;
+        between.sort((a, b) => origin.hDistance(a) - origin.hDistance(b));
+        return (between.length) ? between[0].element : best.element;
       }
 
     } else if (dir === 'left') {
       let left = selectable.filter(o => {
-        return origin.hContains(o, true) && origin.isRightOf(o, false);
+        return origin.hContains(o, true) && origin.isRightOf(o, true);
       });
       utils.debug("Found", left.length, "items contained to left");
-      if (left.length === 0) {
-        left = selectable.filter(o => origin.isRightOf(o));
-        left.sort((a, b) => {
-          return origin.distance(a) - origin.distance(b);
-        });
-        utils.debug("Found", left.length, "items to left");
-      } else {
-        left.sort((a, b) => {
-          return origin.hDistance(a) - origin.hDistance(b);
-        });
-      }
+      left.sort((a, b) => {
+        return origin.hDistance(a) - origin.hDistance(b);
+      });
       const best = left.length && left[0];
       if (best) {
         const bBox = new Box({
@@ -268,29 +234,18 @@ class Errokees {
           return bBox.vContains(o);
         });
         utils.debug("Found", between.length, "items between closest item")
-        between.sort(o => origin.vDistance(o));
-        if (between.length) {
-          return between[0].element;
-        }
-        return best.element;
+        between.sort((a, b) => origin.vDistance(a) - origin.vDistance(b));
+        return (between.length) ? between[0].element : best.element;
       }
 
     } else if (dir === 'right') {
       let right = selectable.filter(o => {
-        return origin.hContains(o, true) && origin.isLeftOf(o, false);
+        return origin.hContains(o, true) && origin.isLeftOf(o, true);
       });
       utils.debug("Found", right.length, "items contained to right")
-      if (right.length === 0) {
-        right = selectable.filter(o => origin.isLeftOf(o));
-        right.sort((a, b) => {
-          return origin.distance(a) - origin.distance(b);
-        });
-        utils.debug("Found", right.length, "items to right");
-      } else {
-        right.sort((a, b) => {
-          return origin.hDistance(a) - origin.hDistance(b);
-        });
-      }
+      right.sort((a, b) => {
+        return origin.hDistance(a) - origin.hDistance(b);
+      });
       const best = right.length && right[0];
       if (best) {
         const bBox = new Box({
@@ -304,11 +259,8 @@ class Errokees {
           return bBox.vContains(o);
         });
         utils.debug("Found", between.length, "items between closest item")
-        between.sort(o => origin.vDistance(o));
-        if (between.length) {
-          return between[0].element;
-        }
-        return best.element;
+        between.sort((a, b) => origin.vDistance(a) - origin.vDistance(b));
+        return (between.length) ? between[0].element : best.element;
       }
 
     }

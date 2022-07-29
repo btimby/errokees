@@ -78,7 +78,8 @@ class Box {
 
   vContains(other, outside=false) {
     return (
-      (this.left < other.left && this.right > other.right) ||
+      (this.left < other.left && this.right > other.left) ||
+      (this.left < other.right && this.right > other.right) ||
       (this.left === other.left && this.right === other.right) ||
       (outside && other.left < this.left && other.right > this.right)
     );
@@ -86,7 +87,8 @@ class Box {
 
   hContains(other, outside=false) {
     return (
-      (this.bottom > other.bottom && this.top < other.top) ||
+      (this.bottom > other.bottom && this.top < other.bottom) ||
+      (this.bottom > other.top && this.bottom < other.top) ||
       (this.bottom === other.bottom && this.top === other.top) ||
       (outside && other.top < this.top && other.bottom > this.bottom)
     );

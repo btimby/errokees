@@ -51,7 +51,7 @@ describe('Box', () => {
     assert.strictEqual(true, right.isAbove(left, true));
   });
 
-  it('correctly identifies vContains / vContains', () => {
+  it('correctly identifies vContains / hContains', () => {
     assert.strictEqual(true, left.hContains(right));
     assert.strictEqual(true, right.hContains(left));
     assert.strictEqual(true, left.vContains(right));
@@ -66,6 +66,14 @@ describe('Box', () => {
     assert.strictEqual(true, right.vContains(left));
     assert.strictEqual(true, left.hContains(right, true));
     assert.strictEqual(true, left.vContains(right, true));
+  });
+
+  it('correctly identifies hContains', () => {
+    left.top = 60;
+    left.bottom = 1380;
+    right.top = 110;
+    right.bottom = 190;
+    assert.strictEqual(true, left.hContains(right))
   });
 
   it('correctly calculates vDistance', () => {
