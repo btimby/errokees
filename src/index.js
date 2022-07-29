@@ -187,7 +187,11 @@ class Errokees {
         const between = selectable.filter(o => bBox.hContains(o));
         utils.debug("Found", between.length, "items between closest item")
         between.sort((a, b) => origin.hDistance(a) - origin.hDistance(b));
-        return (between.length) ? between[0].element : best.element;
+        if (between.length && 
+            origin.hDistance(between[0]) < origin.vDistance(best, 'top', 'bottom')) {
+          return between[0];
+        }
+        return best.element;
       }
 
     } else if (dir === 'down') {
@@ -210,7 +214,11 @@ class Errokees {
         const between = selectable.filter(o => bBox.hContains(o));
         utils.debug("Found", between.length, "items between closest item")
         between.sort((a, b) => origin.hDistance(a) - origin.hDistance(b));
-        return (between.length) ? between[0].element : best.element;
+        if (between.length &&
+            origin.hDistance(between[0]) < origin.vDistance(best, 'bottom', 'top')) {
+          return between[0];
+        }
+        return best.element;
       }
 
     } else if (dir === 'left') {
@@ -230,12 +238,14 @@ class Errokees {
           bottom: best.bottom,
           width: 0, height: 0,
         });
-        const between = selectable.filter(o => {
-          return bBox.vContains(o);
-        });
+        const between = selectable.filter(o => bBox.vContains(o));
         utils.debug("Found", between.length, "items between closest item")
         between.sort((a, b) => origin.vDistance(a) - origin.vDistance(b));
-        return (between.length) ? between[0].element : best.element;
+        if (between.length &&
+            origin.vDistance(between[0]) < origin.hDistance(best, 'right', 'left')) {
+          return between[0];
+        }
+        return best.element;
       }
 
     } else if (dir === 'right') {
@@ -255,14 +265,15 @@ class Errokees {
           bottom: best.bottom,
           width: 0, height: 0,
         });
-        const between = selectable.filter(o => {
-          return bBox.vContains(o);
-        });
+        const between = selectable.filter(o => bBox.vContains(o));
         utils.debug("Found", between.length, "items between closest item")
         between.sort((a, b) => origin.vDistance(a) - origin.vDistance(b));
-        return (between.length) ? between[0].element : best.element;
+        if (between.length &&
+            origin.vDistance(between[0]) < origin.hDistance(best, 'left', 'right')) {
+          return between[0];
+        }
+        return best.element;
       }
-
     }
   }
 
