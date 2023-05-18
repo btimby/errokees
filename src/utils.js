@@ -149,20 +149,22 @@ function activateSelection(el, options) {
   const elType = el.tagName.toLowerCase();
   debug('elType:', elType);
 
-  if (elType === 'input') {
-    el.focus();
-  } else if (elType === 'select') {
-    el.focus();
-    // Re-enable key nagivation.
+  const input = el.querySelector('a,button,input');
+  const select = el.querySelector('select');
+
+  if (input) {
+    debug('focusing', input.tagName);
+    input.focus();
+  } else if (select) {
+    debug('focusing select');
+    select.focus();
     el.addEventListener('change', el.blur, { once: true });
-  } else if (elType === 'a' || elType === 'button') {
-    el.click();
+  }
+
+  if (extra) {
+    raiseEventIf(el, extra);
   } else {
-    if (extra) {
-      raiseEventIf(el, extra);
-    } else {
-      warn('No special handling');
-    }
+    warn('No special handling');
   }
 
   raiseEventIf(el, options.activateEvent);
