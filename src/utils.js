@@ -1,26 +1,27 @@
 const LOG_LEVELS = {
-  'error': 0,
-  'warn': 1,
-  'info': 2,
-  'debug': 3,
+  'ERROR': 0,
+  'WARN': 1,
+  'INFO': 2,
+  'DEBUG': 3,
 };
 
 function _shouldLog(level) {
-  return (localStorage.errokeesLogLevel && localStorage.errokeesLogLevel >= level);
+  return (localStorage.errokeesLogLevel &&
+          localStorage.errokeesLogLevel >= level);
 }
 
 function debug(...args) {
-  if (!_shouldLog(3)) return;
+  if (!_shouldLog(LOG_LEVELS.DEBUG)) return;
   console.log('[errokees]', ...args);
 }
 
 function info(...args) {
-  if (!_shouldLog(2)) return;
+  if (!_shouldLog(LOG_LEVELS.INFO)) return;
   console.info('[errokees]', ...args);
 }
 
 function warn(...args) {
-  if (!_shouldLog(1)) return;
+  if (!_shouldLog(LOG_LEVELS.WARN)) return;
   console.warn('[errokees]', ...args);
 }
 
@@ -30,7 +31,7 @@ function error(...args) {
 
 function setLogLevel(level) {
   if (typeof level === 'string') {
-    let newLevel = level.toLowerCase();
+    let newLevel = level.toUpperCase();
     newLevel = LOG_LEVELS[newLevel];
     if (!newLevel) {
       throw new Error(`Invalid log level string: ${level}`);
