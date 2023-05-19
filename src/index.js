@@ -4,10 +4,9 @@ Errokees [ah-ro-ki:z]
 "use strict";
 import '@babel/polyfill';
 import utils from './utils.js';
-import { Node, elementsToGraph } from './node';
-import { Geom } from './geom';
-import { Left, Right, Up, Down } from './directions';
-import visualize from './visualize';
+import { Node, elementsToGraph } from './node.js';
+import { Left, Right, Up, Down } from './directions.js';
+import visualize from './visualize.js';
 
 const defaults = {
   // keys...
@@ -31,22 +30,23 @@ const defaults = {
   scroll: true,
 
   elementTypes: [
-    'input', 'a', 'button', 'select', 'checkbox', 'radio',
+    'input', 'textarea', 'a', 'button', 'select', 'checkbox', 'radio',
   ],
 }
 
 function getElements(scope, options) {
-  const elements = Set();
+  const elements = new Set();
 
   if (scope.getElementsByClassName) {
-    for (let el in scope.getElementsByClassName(options.selectableClass)) {
-      elements.add(new Geom(el));
+    for (let el of scope.getElementsByClassName(options.selectableClass)) {
+      utils.debug('Found element by class', el);
+      elements.add(el);
     }
   }
 
   if (scope.getElementsByTagName) {
-    for (let type in options.elementTypes) {
-      for (let el in scope.getElementsByTagName(type)) {
+    for (let type of options.elementTypes) {
+      for (let el of scope.getElementsByTagName(type)) {
         let isDupe = false;
 
         for (let pel in elements) {
@@ -57,32 +57,34 @@ function getElements(scope, options) {
         }
 
         if (!isDupe) {
-          elements.add(new Geom(el));
+          utils.debug('Found element by type', el);
+          elements.add(el);
         }
       }
     }
   }
 
-  return elements;
+  utils.debug('Found', elements.size, 'elements');
+  return [...elements];
 }
 
 class Errokees {
   constructor(scope, options) {
-    this.scope = scope || document;
+    this.scope = scope || document.body;
     this.options = {
       ...defaults,
       ...options,
     };
     this.movements = {
-      [options.up]: Up,
-      [options.down]: Down,
-      [options.left]: Left,
-      [options.right]: Right,
+      [this.options.up]: Up,
+      [this.options.down]: Down,
+      [this.options.left]: Left,
+      [this.options.right]: Right,
     }
     this._selected = null;
     this._selectedType = null;
-    // this._selectable = getElements(this.scope, this.options);
     this._graph = elementsToGraph(getElements(this.scope, this.options));
+
     // select root node.
     this.select(this._graph);
 
@@ -92,6 +94,8 @@ class Errokees {
 
     this._paused = true;
     this.resume();
+
+    this._visualizeEl = null;
   }
 
   get selected() {
@@ -119,6 +123,15 @@ class Errokees {
 
   get selectable() {
     return this._selectable;
+  }
+
+  toggleVisualization() {
+    if (this._visualizeEl) {
+      this._visualizeEl.remove();
+      this._visualizeEl = null;
+    } else {
+      this._visualizeEl = visualize(this.scope, this._graph);
+    }
   }
 
   pause() {
@@ -157,11 +170,11 @@ class Errokees {
 
     if (this.selected) {
       // Deselect current entity.
-      utils.deselect(this.selected, this.options);
+      utils.deselect(this.selected.el, this.options);
     }
 
     // Select new entity.
-    utils.select(node, this.options);
+    utils.select(node.el, this.options);
     this.selected = node;
 
     // Controls if event bubbles or not.
@@ -169,9 +182,9 @@ class Errokees {
   }
 
   _activate() {
-    utils.info('Activating selected entity:', this.selected);
+    utils.info('Activating selected entity:', this.selected.el);
 
-    utils.activateSelection(this.selected, this.options);
+    utils.activateSelection(this.selected.el, this.options);
 
     // Controls if event bubbles or not.
     return this.selectedType === 'select';
@@ -180,10 +193,12 @@ class Errokees {
   _onInput(ev) {
     const { key } = ev;
     const dir = this.movements[key];
+    utils.debug('Received key', key, '->', dir);
 
     if (key === this.options.activate) {
       ev.returnValue = this._activate();
     } else if (dir) {
+      utils.debug('Moving', dir);
       // If left or right and text input is focused, only exit focus
       // when cursor is at beginning or end.
       const focused = utils.isFocused(this.selected);
@@ -192,29 +207,29 @@ class Errokees {
       }
 
       if (this.selectedType.startsWith('input') && focused) {
-        if (dir === 'left' && !utils.isCursorLeft(this.selected)) {
+        if (dir === Left && !utils.isCursorLeft(this.selected)) {
           return;
-        } else if (dir === 'right' && !utils.isCursorRight(this.selected)) {
+        } else if (dir === Right && !utils.isCursorRight(this.selected)) {
           return;
         }
       } else if (this.selectedType === 'select' && focused) {
-        if (dir === 'up' && !utils.isSelectedTop(this.selected)) {
+        if (dir === Up && !utils.isSelectedTop(this.selected)) {
           return;
-        } else if (dir === 'down' && !utils.isSelectedBottom(this.selected)) {
+        } else if (dir === Down && !utils.isSelectedBottom(this.selected)) {
           return;
         }
       }
 
-      if (this.selected[dir]) {
-        this.select(this.selected[dir])
+      if (this.selected[dir.name]) {
+        this.select(this.selected[dir.name])
         ev.returnValue = true;
       } else {
         // Prevents scrolling on arrow key.
         ev.returnValue = false;
       }
     } else if (ev.ctrlKey && ev.altKey) {
-      const el = visualize(this._graph);
-      this.scope.addEventListener('keyup', () => { document.removeChild(el); }, { once: true });
+      this.toggleVisualization();
+      this.scope.addEventListener('keyup', () => this.toggleVisualization(), { once: true });
     } else {
       utils.info('Unknown key:', key);
     }

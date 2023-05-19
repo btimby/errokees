@@ -150,16 +150,28 @@ function activateSelection(el, options) {
   const elType = el.tagName.toLowerCase();
   debug('elType:', elType);
 
-  const input = el.querySelector('a,button,input');
-  const select = el.querySelector('select');
+  // special element handling.
+  switch (elType) {
+    case 'a':
+    case 'button':
+      debug('Focusing & clicking', elType);
+      el.focus();
+      el.click();
+      break;
 
-  if (input) {
-    debug('focusing', input.tagName);
-    input.focus();
-  } else if (select) {
-    debug('focusing select');
-    select.focus();
-    el.addEventListener('change', el.blur, { once: true });
+    case 'input':
+    case 'textarea':
+      debug('Focusing', elType);
+      el.focus();
+      break;
+
+    case 'select':
+      debug('Opening', elType);
+      el.focus();
+      // NOTE: setting this always triggers change (to blur).
+      el.selectedIndex = -1;
+      el.addEventListener('change', el.blur, { once: true });
+      break;
   }
 
   if (extra) {

@@ -91,6 +91,7 @@
             <button id='delButton'>Del</button><br/>
             <button id='pauseButton'>Pause</button>
             <button id='resumeButton'>Resume</button>
+            <button id='visualizeButton'>Visualize</button>
         </div>
     </body>
 
@@ -149,6 +150,11 @@
         .getElementById('resumeButton')
         .addEventListener('click', function() {
             ek.resume();
+        });
+    document
+        .getElementById('visualizeButton')
+        .addEventListener('click', function() {
+            ek.toggleVisualization();
         });
 </script>
 </html>

@@ -1,5 +1,5 @@
 // Abstract base.
-class Direction {
+class _Direction {
   constructor(name, inverse) {
     this.name = name;
     this.inverse = inverse;
@@ -10,58 +10,71 @@ class Direction {
   }
 }
 
-class Left extends Direction {
+class _Left extends _Direction {
   constructor() {
-    super('left', Right);
+    super('left', 'right');
   }
 
   compare(one, two) {
+    // Return true if two is left of one.
     const v = two.y - one.y;
     const h = two.x - one.x;
-    if (h < 0) return false;
-    return Math.abs(v) < Math.abs(h);
-  }
-}
 
-class Right extends Direction {
-  constructor() {
-    super('right', Left);
-  }
-
-  compare(one, two) {
-    const v = two.y - one.y;
-    const h = two.x - one.x;
     if (h > 0) return false;
     return Math.abs(v) < Math.abs(h);
   }
 }
 
-class Up extends Direction {
+class _Right extends _Direction {
   constructor() {
-    super('up', Down);
+    super('right', 'left');
+  }
+
+  compare(one, two) {
+    // Return true if two is right of one.
+    const v = two.y - one.y;
+    const h = two.x - one.x;
+
+    if (h < 0) return false;
+    return Math.abs(v) < Math.abs(h);
+  }
+}
+
+class _Up extends _Direction {
+  constructor() {
+    super('up', 'down');
   }
 
   compare(one, two) {
     const v = two.y - one.y;
     const h = two.x - one.x;
+
     if (v > 0) return false;
     return Math.abs(h) <= Math.abs(v);
   }
 }
 
-class Down extends Direction {
+class _Down extends _Direction {
   constructor() {
-    super('down', Up);
+    super('down', 'up');
   }
 
   compare(one, two) {
     const v = two.y - one.y;
     const h = two.x - one.x;
+
     if (v < 0) return false;
     return Math.abs(h) <= Math.abs(v);
   }
 }
 
+const Left = new _Left();
+const Right = new _Right();
+const Up = new _Up();
+const Down = new _Down();
+
+const ALL = [Left, Right, Up, Down];
+
 export {
-  Left, Right, Up, Down,
+  Left, Right, Up, Down, ALL,
 };
