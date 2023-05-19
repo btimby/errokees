@@ -30,7 +30,7 @@ const defaults = {
   scroll: true,
 
   elementTypes: [
-    'input', 'textarea', 'a', 'button', 'select', 'checkbox', 'radio',
+    'input', 'textarea', 'a', 'button', 'select',
   ],
 }
 
@@ -96,6 +96,9 @@ class Errokees {
     this.resume();
 
     this._visualizeEl = null;
+    if (localStorage && localStorage.errokeesVisualize) {
+      this.toggleVisualization(this.scope, this.options);
+    }
   }
 
   get selected() {

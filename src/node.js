@@ -1,4 +1,4 @@
-import { Left, Right, Up, Down, ALL } from './directions.js';
+import { Left, Right, Up, Down, ALL, INVERSE_NAMES } from './directions.js';
 import Geom from './geom.js';
 import utils from './utils.js';
 
@@ -41,35 +41,54 @@ class Node {
     }
   }
 
-  add(node) {
+  distanceTo(node) {
+    return this.distanceTo1(node);
+  }
+
+  distanceTo1(node) {
+    // Euclidean
+    let x = this.geom.x - node.geom.x;
+    let y = this.geom.y - node.geom.y;
+    x *= x;
+    y *= y;
+    const d = Math.sqrt(x + y);
+    utils.debug('distance1 =', d);
+    return d;
+  }
+
+  distanceTo2(node) {
+    // Driving
+    let x = Math.abs(this.geom.x - node.geom.x);
+    let y = Math.abs(this.geom.y - node.geom.y);
+    let d = x + y;
+    utils.debug('distance2 =', d);
+    return d;
+  }
+
+  add(child) {
     // TODO: be smarter, find the closest item in each direction.
-    let parent = this;
+    const nodes = [this, ...this.children];
+    const closeParents = {};
 
-    while (true) {
-      const dir = parent.directionTo(node);
-      const child = parent[dir.name];
-
-      if (child) {
-        // something already this way.
-        if (child.directionTo(node).name === dir.inverse) {
-          // place between nodes.
-          child[dir.inverse] = node;
-          node[dir.name] = child;
-          parent[dir.name] = node;
-          node[dir.inverse] = parent;
-          return parent;
+    // Find the best cantidate 
+    debugger;
+    for (let dir of ALL) {
+      for (let parent of nodes) {
+        const closestParent = closeParents[dir.name];
+        if (parent.directionTo(child) !== dir) {
+          continue;
         }
-
-        // go further.
-        parent = child;
-        continue;
+        if (!closestParent ||
+            parent.distanceTo(child) < closestParent.distanceTo(child)) {
+              closeParents[dir.name] = parent;
+        }
       }
-
-      // nothing here, place the node.
-      parent[dir.name] = node;
-      node[dir.inverse] = parent;
-      return parent;
     }
+
+    Object.entries(closeParents).forEach(([dir_name, parent]) => {
+      parent[dir_name] = child;
+      child[INVERSE_NAMES[dir_name]] = parent;
+    });
   }
 
   getNodeByElement(el) {

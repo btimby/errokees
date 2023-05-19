@@ -148,6 +148,10 @@ function select(el, options) {
 function activateSelection(el, options) {
   const extra = readDataEvent(el, 'activate');
   const elType = el.tagName.toLowerCase();
+  let inputType;
+  if (elType === 'input') {
+    inputType = el.getAttribute('type');
+  }
   debug('elType:', elType);
 
   // special element handling.
@@ -160,6 +164,11 @@ function activateSelection(el, options) {
       break;
 
     case 'input':
+      if (inputType in ['checkbox', 'radio']) {
+        debug('Checking', inputType);
+        el.checked = !el.checked;
+      }
+      // fall through
     case 'textarea':
       debug('Focusing', elType);
       el.focus();

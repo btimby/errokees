@@ -1,8 +1,16 @@
 // Abstract base.
+const INVERSE_NAMES = {
+  'left': 'right',
+  'right': 'left',
+  'up': 'down',
+  'down': 'up',
+};
+
+
 class _Direction {
-  constructor(name, inverse) {
+  constructor(name) {
     this.name = name;
-    this.inverse = inverse;
+    this.inverse = INVERSE_NAMES[name];
   }
 
   compare() {
@@ -12,59 +20,61 @@ class _Direction {
 
 class _Left extends _Direction {
   constructor() {
-    super('left', 'right');
+    super('left');
   }
 
   compare(one, two) {
     // Return true if two is left of one.
-    const v = two.y - one.y;
-    const h = two.x - one.x;
+    const x = Math.abs(two.x - one.x);
+    const y = Math.abs(two.y - one.y);
 
-    if (h > 0) return false;
-    return Math.abs(v) < Math.abs(h);
+    if (x > 0) return false;
+    return y < x;
   }
 }
 
 class _Right extends _Direction {
   constructor() {
-    super('right', 'left');
+    super('right');
   }
 
   compare(one, two) {
     // Return true if two is right of one.
-    const v = two.y - one.y;
-    const h = two.x - one.x;
+    const x = Math.abs(two.x - one.x);
+    const y = Math.abs(two.y - one.y);
 
-    if (h < 0) return false;
-    return Math.abs(v) < Math.abs(h);
+    if (x < 0) return false;
+    return y < x;
   }
 }
 
 class _Up extends _Direction {
   constructor() {
-    super('up', 'down');
+    super('up');
   }
 
   compare(one, two) {
-    const v = two.y - one.y;
-    const h = two.x - one.x;
+    // Return true if two is above me.
+    const x = Math.abs(two.x - one.x);
+    const y = Math.abs(two.y - one.y);
 
-    if (v > 0) return false;
-    return Math.abs(h) <= Math.abs(v);
+    if (y > 0) return false;
+    return x <= y;
   }
 }
 
 class _Down extends _Direction {
   constructor() {
-    super('down', 'up');
+    super('down');
   }
 
   compare(one, two) {
-    const v = two.y - one.y;
-    const h = two.x - one.x;
+    // Return true if two is below me.
+    const x = Math.abs(two.x - one.x);
+    const y = Math.abs(two.y - one.y);
 
-    if (v < 0) return false;
-    return Math.abs(h) <= Math.abs(v);
+    if (y < 0) return false;
+    return x <= y;
   }
 }
 
@@ -76,5 +86,5 @@ const Down = new _Down();
 const ALL = [Left, Right, Up, Down];
 
 export {
-  Left, Right, Up, Down, ALL,
+  Left, Right, Up, Down, ALL, INVERSE_NAMES,
 };
