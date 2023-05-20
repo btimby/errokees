@@ -1,26 +1,27 @@
 const LOG_LEVELS = {
-  'error': 0,
-  'warn': 1,
-  'info': 2,
-  'debug': 3,
+  'ERROR': 0,
+  'WARN': 1,
+  'INFO': 2,
+  'DEBUG': 3,
 };
 
 function _shouldLog(level) {
-  return (localStorage.errokeesLogLevel && localStorage.errokeesLogLevel >= level);
+  return (localStorage.errokeesLogLevel &&
+          localStorage.errokeesLogLevel >= level);
 }
 
 function debug(...args) {
-  if (!_shouldLog(3)) return;
+  if (!_shouldLog(LOG_LEVELS.DEBUG)) return;
   console.log('[errokees]', ...args);
 }
 
 function info(...args) {
-  if (!_shouldLog(2)) return;
+  if (!_shouldLog(LOG_LEVELS.INFO)) return;
   console.info('[errokees]', ...args);
 }
 
 function warn(...args) {
-  if (!_shouldLog(1)) return;
+  if (!_shouldLog(LOG_LEVELS.WARN)) return;
   console.warn('[errokees]', ...args);
 }
 
@@ -30,7 +31,7 @@ function error(...args) {
 
 function setLogLevel(level) {
   if (typeof level === 'string') {
-    let newLevel = level.toLowerCase();
+    let newLevel = level.toUpperCase();
     newLevel = LOG_LEVELS[newLevel];
     if (!newLevel) {
       throw new Error(`Invalid log level string: ${level}`);
@@ -147,18 +148,39 @@ function select(el, options) {
 function activateSelection(el, options) {
   const extra = readDataEvent(el, 'activate');
   const elType = el.tagName.toLowerCase();
+  let inputType;
+  if (elType === 'input') {
+    inputType = el.getAttribute('type');
+  }
   debug('elType:', elType);
 
-  const input = el.querySelector('a,button,input');
-  const select = el.querySelector('select');
+  // special element handling.
+  switch (elType) {
+    case 'a':
+    case 'button':
+      debug('Focusing & clicking', elType);
+      el.focus();
+      el.click();
+      break;
 
-  if (input) {
-    debug('focusing', input.tagName);
-    input.focus();
-  } else if (select) {
-    debug('focusing select');
-    select.focus();
-    el.addEventListener('change', el.blur, { once: true });
+    case 'input':
+      if (inputType in ['checkbox', 'radio']) {
+        debug('Checking', inputType);
+        el.checked = !el.checked;
+      }
+      // fall through
+    case 'textarea':
+      debug('Focusing', elType);
+      el.focus();
+      break;
+
+    case 'select':
+      debug('Opening', elType);
+      el.focus();
+      // NOTE: setting this always triggers change (to blur).
+      el.selectedIndex = -1;
+      el.addEventListener('change', el.blur, { once: true });
+      break;
   }
 
   if (extra) {
