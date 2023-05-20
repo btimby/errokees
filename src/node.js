@@ -71,7 +71,6 @@ class Node {
     const closeParents = {};
 
     // Find the best cantidate 
-    debugger;
     for (let dir of ALL) {
       for (let parent of nodes) {
         const closestParent = closeParents[dir.name];
@@ -85,10 +84,22 @@ class Node {
       }
     }
 
+    let added = Object.keys(closeParents).length;
     Object.entries(closeParents).forEach(([dir_name, parent]) => {
+      const child_child = parent[dir_name];
+
+      if (child_child) {
+        child[dir_name] = child_child;
+        child_child[INVERSE_NAMES[dir_name]] = child;
+      }
+
       parent[dir_name] = child;
       child[INVERSE_NAMES[dir_name]] = parent;
     });
+
+    if (!added) {
+      throw new Error('Did not add node');
+    }
   }
 
   getNodeByElement(el) {

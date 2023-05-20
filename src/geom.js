@@ -7,8 +7,8 @@ class Geom {
       throw new Error(`Element ${el} has no bounding rectangle`);
     }
     this.rect = el.getBoundingClientRect();
-    this.x = this.rect.left + Math.round(this.rect.width / 2);
-    this.y = this.rect.top + Math.round(this.rect.height / 2);
+    this.x = Math.round(this.rect.left + this.rect.width / 2);
+    this.y = Math.round(this.rect.top + this.rect.height / 2);
     /*
     Rect attributes:
     ----------------

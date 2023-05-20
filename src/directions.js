@@ -23,10 +23,10 @@ class _Left extends _Direction {
     super('left');
   }
 
-  compare(one, two) {
-    // Return true if two is left of one.
-    const x = Math.abs(two.x - one.x);
-    const y = Math.abs(two.y - one.y);
+  compare(right, left) {
+    // Return true if left is left of right.
+    const x = left.x - right.x;
+    const y = Math.abs(left.y - right.y);
 
     if (x > 0) return false;
     return y < x;
@@ -38,10 +38,10 @@ class _Right extends _Direction {
     super('right');
   }
 
-  compare(one, two) {
-    // Return true if two is right of one.
-    const x = Math.abs(two.x - one.x);
-    const y = Math.abs(two.y - one.y);
+  compare(left, right) {
+    // Return true if right is right of left.
+    const x = right.x - left.x;
+    const y = Math.abs(right.y - left.y);
 
     if (x < 0) return false;
     return y < x;
@@ -56,7 +56,7 @@ class _Up extends _Direction {
   compare(one, two) {
     // Return true if two is above me.
     const x = Math.abs(two.x - one.x);
-    const y = Math.abs(two.y - one.y);
+    const y = two.y - one.y;
 
     if (y > 0) return false;
     return x <= y;
@@ -71,7 +71,7 @@ class _Down extends _Direction {
   compare(one, two) {
     // Return true if two is below me.
     const x = Math.abs(two.x - one.x);
-    const y = Math.abs(two.y - one.y);
+    const y = two.y - one.y;
 
     if (y < 0) return false;
     return x <= y;
