@@ -33,10 +33,15 @@ function createCanvas(parent) {
 }
 
 function visualize(parent, graph) {
-  /*
+/*
   Visualizes the graph by overlaying a canvas element and drawing
   bounding boxes and lines for each element.
-  */
+*/
+  if (!graph.root) {
+    utils.warn('Cannot visualize empty graph!');
+    return;
+  }
+
   utils.info('Visualizing graph with', graph.children.length, 'nodes');
   const [el, canvas] = createCanvas(parent);
   const context = canvas.getContext('2d');

@@ -4,7 +4,7 @@ Errokees [ah-ro-ki:z]
 "use strict";
 import '@babel/polyfill';
 import utils from './utils.js';
-import { Node, elementsToGraph } from './node.js';
+import Graph from './graph.js';
 import { Left, Right, Up, Down } from './directions.js';
 import visualize from './visualize.js';
 
@@ -83,10 +83,8 @@ class Errokees {
     }
     this._selected = null;
     this._selectedType = null;
-    this._graph = elementsToGraph(getElements(this.scope, this.options));
-
-    // select root node.
-    this.select(this._graph);
+    this._graph = new Graph()
+    this.add(...getElements(this.scope, this.options));
 
     // handle events.
     this._mObserver = null;
@@ -96,8 +94,13 @@ class Errokees {
     this.resume();
 
     this._visualizeEl = null;
-    if (localStorage && localStorage.errokeesVisualize) {
-      this.toggleVisualization(this.scope, this.options);
+  }
+
+  add() {
+    this._graph.add(...arguments);
+    if (!this.selected) {
+      this.select(this._graph.root);
+      this.updateVisualization();
     }
   }
 
@@ -128,12 +131,29 @@ class Errokees {
     return this._selectable;
   }
 
+  visualize() {
+    this._visualizeEl = visualize(this.scope, this._graph);
+  }
+
+  deVisualize() {
+    this._visualizeEl.remove();
+    this._visualizeEl = null;
+  }
+
   toggleVisualization() {
     if (this._visualizeEl) {
-      this._visualizeEl.remove();
-      this._visualizeEl = null;
+      this.deVisualize();
     } else {
-      this._visualizeEl = visualize(this.scope, this._graph);
+      this.visualize();
+    }
+  }
+
+  updateVisualization() {
+    if (this._visualizeEl || (localStorage && localStorage.errokeesVisualize)) {
+      if (this._visualizeEl) {
+        this.deVisualize();
+      }
+      this.visualize();
     }
   }
 
@@ -169,6 +189,11 @@ class Errokees {
   }
 
   select(node) {
+    if (!node || !node.el) {
+      utils.warn('Cannot select null element');
+      return;
+    }
+
     utils.info('Selecting entity:', node.el);
 
     if (this.selected) {
@@ -209,13 +234,13 @@ class Errokees {
         utils.debug('element is focused');
       }
 
-      if (this.selectedType.startsWith('input') && focused) {
+      if (this.selectedType && this.selectedType.startsWith('input') && focused) {
         if (dir === Left && !utils.isCursorLeft(this.selected)) {
           return;
         } else if (dir === Right && !utils.isCursorRight(this.selected)) {
           return;
         }
-      } else if (this.selectedType === 'select' && focused) {
+      } else if (this.selectedType && this.selectedType === 'select' && focused) {
         if (dir === Up && !utils.isSelectedTop(this.selected)) {
           return;
         } else if (dir === Down && !utils.isSelectedBottom(this.selected)) {
@@ -247,12 +272,10 @@ class Errokees {
       record.addedNodes.forEach(el => {
         if (el && el.classList && el.classList.contains(this.options.selectableClass)) {
           utils.info('Adding entity:', el, 'from mutation');
-          this._graph.add(new Node(el));
+          this.add(el);
         }
-        for (let cel in getElements(el, this.options)) {
-          utils.info('Adding entity child:', cel, 'from mutation')
-          this._graph.add(new Node(cel));
-        }
+
+        this.add(...getElements(el, this.options));
       });
 
       record.removedNodes.forEach(el => {
@@ -260,9 +283,10 @@ class Errokees {
           utils.info('Removing entity:', el, 'from mutation')
           this._graph.deleteByElement(el);
         }
+
         for (let cel in getElements(el, this.options)) {
           utils.info('Removing entity child:', cel, 'from mutation')
-          this.selectable.deleteByElement(cel);
+          this._graph.deleteByElement(cel);
         }
       });
     });

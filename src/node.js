@@ -66,75 +66,42 @@ class Node {
   }
 
   add(child) {
-    // TODO: be smarter, find the closest item in each direction.
-    const nodes = [this, ...this.children];
-    const closeParents = {};
+    const neighbors = {};
 
-    // Find the best cantidate 
+    // Find the closest neighbor in each direction. 
     for (let dir of ALL) {
-      for (let parent of nodes) {
-        const closestParent = closeParents[dir.name];
-        if (parent.directionTo(child) !== dir) {
+      for (let node of this.children) {
+        const closestNeighbor = neighbors[dir.name];
+
+        if (node.directionTo(child) !== dir) {
           continue;
         }
-        if (!closestParent ||
-            parent.distanceTo(child) < closestParent.distanceTo(child)) {
-              closeParents[dir.name] = parent;
+
+        if (!closestNeighbor ||
+            node.distanceTo(child) < closestNeighbor.distanceTo(child)) {
+              neighbors[dir.name] = node;
         }
       }
     }
 
-    let added = Object.keys(closeParents).length;
-    Object.entries(closeParents).forEach(([dir_name, parent]) => {
-      const child_child = parent[dir_name];
+    if (Object.keys(neighbors).length == 0) {
+      throw new Error('Cannot add node, no close neighbors');
+    }
+
+    Object.entries(neighbors).forEach(([dir_name, node]) => {
+      const child_child = node[dir_name];
 
       if (child_child) {
+        utils.debug('Inserting node between two nodes.');
         child[dir_name] = child_child;
         child_child[INVERSE_NAMES[dir_name]] = child;
       }
 
-      parent[dir_name] = child;
-      child[INVERSE_NAMES[dir_name]] = parent;
+      utils.debug('Adding node')
+      node[dir_name] = child;
+      child[INVERSE_NAMES[dir_name]] = node;
     });
-
-    if (!added) {
-      throw new Error('Did not add node');
-    }
-  }
-
-  getNodeByElement(el) {
-    for (let node in this.children) {
-      if (node.geom.el === el) {
-        return node;
-      }
-    }
-    utils.warn('Cound not find element:', el);
-  }
-
-  deleteByElement(el) {
-    const node = this.getNodeByElement(el);
-    if (!node) return;
-
-    // connect inverse edges
-    for (let dir in ALL) {
-      if (node[dir]) {
-        node[dir][dir.inverse] = node[dir.inverse];
-      }
-    }
   }
 }
 
-function elementsToGraph(elements) {
-  utils.debug('Building graph from', elements.length, 'elements');
-  let root = new Node(elements[0]);
-
-  for (let i = 1; i < elements.length; i++) {
-    root.add(new Node(elements[i]));
-  }
-
-  return root;
-}
-
-export {
-  elementsToGraph, Node,
-};
+export default Node;
