@@ -1,9 +1,12 @@
+import utils from './utils.js';
+
 class Geom {
   constructor(el) {
     if (!el) {
       throw new Error('Invalid element');
     }
     if (!el.getBoundingClientRect) {
+      utils.error(`Element ${el} has no bounding rectangle`);
       throw new Error(`Element ${el} has no bounding rectangle`);
     }
     this.rect = el.getBoundingClientRect();
