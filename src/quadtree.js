@@ -78,7 +78,7 @@ class QuadTree extends EventTarget {
 
     this.children.forEach((curr) => {
       if (!curr.isLeaf) return;
-      if (curr.el === origin.el) return;
+      if (curr === origin) return;
       if (curr.getDirectionTo(origin.x, origin.y) !== dir) return;
       filtered.push(curr);
     });
