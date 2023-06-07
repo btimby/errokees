@@ -4,11 +4,11 @@ Errokees [ah-ro-ki:z]
 "use strict";
 import '@babel/polyfill';
 import utils from './utils.js';
-import Graph from './graph.js';
-import { Left, Right, Up, Down } from './directions.js';
-import visualize from './visualize.js';
+import QuadTree from './quadtree.js';
 
 const defaults = {
+  scope: null,
+
   // keys...
   up: 'ArrowUp',
   down: 'ArrowDown',
@@ -17,8 +17,9 @@ const defaults = {
   activate: 'Enter',
 
   // css classes
-  selectableClass: 'errokees-selectable',
-  selectedClass: 'errokees-selected',
+  selectableClass: 'ek-selectable',
+  selectedClass: 'ek-selected',
+  containerClass: 'ek-container',
 
   // Define events.
   keyEventName: 'keydown',
@@ -32,190 +33,98 @@ const defaults = {
   elementTypes: [
     'input', 'textarea', 'a', 'button', 'select',
   ],
-}
 
-function getElements(scope, options) {
-  const elements = new Set();
-
-  if (scope.getElementsByClassName) {
-    for (let el of scope.getElementsByClassName(options.selectableClass)) {
-      utils.debug('Found element by class', el);
-      elements.add(el);
-    }
-  }
-
-  if (scope.getElementsByTagName) {
-    for (let type of options.elementTypes) {
-      for (let el of scope.getElementsByTagName(type)) {
-        let isDupe = false;
-
-        for (let pel in elements) {
-          if (pel.contains(el)) {
-            isDupe = true;
-            break;
-          }
-        }
-
-        if (!isDupe) {
-          utils.debug('Found element by type', el);
-          elements.add(el);
-        }
-      }
-    }
-  }
-
-  utils.debug('Found', elements.size, 'elements');
-  return [...elements];
+  visualize: false,
 }
 
 class Errokees {
-  constructor(scope, options) {
-    this.scope = scope || document.body;
+  constructor(options) {
+    this.scope = options.scope || document.body;
     this.options = {
       ...defaults,
       ...options,
     };
+    // Ensure this is a set.
+    this.options.elementTypes = new Set(this.options.elementTypes);
     this.movements = {
-      [this.options.up]: Up,
-      [this.options.down]: Down,
-      [this.options.left]: Left,
-      [this.options.right]: Right,
+      [this.options.up]: 'UP',
+      [this.options.down]: 'DN',
+      [this.options.left]: 'LT',
+      [this.options.right]: 'RT',
     }
+    /*
+    Create an element that we will use for intersection observation.
+    We only care about elements within this element.
+    */
+
+    this._graph = new QuadTree(this.scope, {visualize: this.options.visualize});
+    this._graph.addEventListener('selected', this._onSelected.bind(this));
+
+    // Watch for intersections with a rectangle 20% larger than the view port.
+    this._intersectionHandler = this._onIntersection.bind(this);
+    this._intObs = new IntersectionObserver(this._intersectionHandler, {
+      rootMargin: '20%',
+    });
+
+    for (const el of this._getSelectableElements(this.scope)) {
+      this._intObs.observe(el);
+    }
+
+    this._mutationHandler = this._onMutation.bind(this);
+    this._mutObs = new MutationObserver(this._mutationHandler);
+    this._mutObs.observe(this.scope, {
+      subtree: true,
+      childList: true,
+    });
+
     this._selected = null;
-    this._selectedType = null;
-    this._graph = new Graph()
-    this.add(...getElements(this.scope, this.options));
-
-    // handle events.
-    this._mObserver = null;
     this._inputHandler = this._onInput.bind(this);
-
-    this._paused = true;
-    this.resume();
-
-    this._visualizeEl = null;
+    this.scope.addEventListener(this.options.keyEventName, this._inputHandler);
   }
 
-  add() {
-    this._graph.add(...arguments);
-    if (!this.selected) {
-      this.select(this._graph.root);
-      this.updateVisualization();
+  set visualize(value) {
+    this._graph.visualize = value;
+  }
+
+  _getSelectableElements(el) {
+    const found = new Set();
+
+    if (this.options.elementTypes.has(el.type) || (el.classList && el.classList.contains(this.options.selectableClass))) {
+      found.add(el);
     }
-  }
 
-  get selected() {
-    return this._selected;
-  }
+    if (el.getElementsByClassName) {
+      for (const childEl of el.getElementsByClassName(this.options.selectableClass)) {
+        found.add(childEl);
+      }
+    }
 
-  set selected(value) {
-    this._selected = value;
-    this._selectedType = null;
-  }
+    if (el.getElementsByTagName) {
+      for (const type of this.options.elementTypes) {
+        for (const childEl of el.getElementsByTagName(type)) {
+          let dupe = false;
 
-  get selectedType() {
-    if (!this._selectedType && this._selected) {
-      this._selectedType =  this._selected.el.tagName.toLowerCase();
-      if (this._selectedType === 'input') {
-        const inputType = this._selected.el.attributes['type'];
-        if (inputType) {
-          this._selectedType += `-${inputType.value}`;
+          for (const pel in found) {
+            if (pel.contains(childEl)) {
+              dupe = true;
+            }
+          }
+
+          if (!dupe) {
+            found.add(childEl);
+            if (childEl.classList && !childEl.classList.contains(this.options.selectableClass)) {
+              childEl.classList.add(this.options.selectableClass);
+            }
+          }
         }
       }
     }
 
-    return this._selectedType || null;
+    return found;
   }
 
-  get selectable() {
-    return this._selectable;
-  }
-
-  visualize() {
-    this._visualizeEl = visualize(this.scope, this._graph);
-  }
-
-  deVisualize() {
-    this._visualizeEl.remove();
-    this._visualizeEl = null;
-  }
-
-  toggleVisualization() {
-    if (this._visualizeEl) {
-      this.deVisualize();
-    } else {
-      this.visualize();
-    }
-  }
-
-  updateVisualization() {
-    if (this._visualizeEl || (localStorage && localStorage.errokeesVisualize)) {
-      if (this._visualizeEl) {
-        this.deVisualize();
-      }
-      this.visualize();
-    }
-  }
-
-  pause() {
-    if (this._paused) {
-      return;
-    }
-    this.scope.removeEventListener(this.options.keyEventName, this._inputHandler, true);
-    this._mObserver.disconnect();
-    this._mObserver = null;
-    this._paused = true;
-    utils.info('Paused')
-  }
-
-  resume() {
-    if (!this._paused) {
-      return;
-    }
-    this.scope.addEventListener(this.options.keyEventName, this._inputHandler, true);
-    this._mObserver = new MutationObserver(this._onMutation.bind(this));
-    // NOTE: perhaps watch attributes too, to watch for our class being toggled.
-    this._mObserver.observe(this.scope, {
-      subtree: true,
-      childList: true,
-    });
-    this._paused = false;
-    utils.info('Resumed')
-  }
-
-  destroy() {
-    this.pause();
-    this._selectable.clear();
-  }
-
-  select(node) {
-    if (!node || !node.el) {
-      utils.warn('Cannot select null element');
-      return;
-    }
-
-    utils.info('Selecting entity:', node.el);
-
-    if (this.selected) {
-      // Deselect current entity.
-      utils.deselect(this.selected.el, this.options);
-    }
-
-    // Select new entity.
-    utils.select(node.el, this.options);
-    this.selected = node;
-
-    // Controls if event bubbles or not.
-    return false;
-  }
-
-  _activate() {
-    utils.info('Activating selected entity:', this.selected.el);
-
-    utils.activateSelection(this.selected.el, this.options);
-
-    // Controls if event bubbles or not.
-    return this.selectedType === 'select';
+  activate() {
+    utils.debug('Activating', this._selected);
   }
 
   _onInput(ev) {
@@ -224,69 +133,52 @@ class Errokees {
     utils.debug('Received key', key, '->', dir);
 
     if (key === this.options.activate) {
-      ev.returnValue = this._activate();
+      ev.returnValue = this.activate();
     } else if (dir) {
-      utils.debug('Moving', dir);
-      // If left or right and text input is focused, only exit focus
-      // when cursor is at beginning or end.
-      const focused = utils.isFocused(this.selected);
-      if (focused) {
-        utils.debug('element is focused');
-      }
-
-      if (this.selectedType && this.selectedType.startsWith('input') && focused) {
-        if (dir === Left && !utils.isCursorLeft(this.selected)) {
-          return;
-        } else if (dir === Right && !utils.isCursorRight(this.selected)) {
-          return;
-        }
-      } else if (this.selectedType && this.selectedType === 'select' && focused) {
-        if (dir === Up && !utils.isSelectedTop(this.selected)) {
-          return;
-        } else if (dir === Down && !utils.isSelectedBottom(this.selected)) {
-          return;
-        }
-      }
-
-      if (this.selected[dir.name]) {
-        this.select(this.selected[dir.name])
-        ev.returnValue = true;
-      } else {
-        // Prevents scrolling on arrow key.
-        ev.returnValue = false;
-      }
-    } else if (ev.ctrlKey && ev.altKey) {
-      this.toggleVisualization();
-      this.scope.addEventListener('keyup', () => this.toggleVisualization(), { once: true });
-    } else {
-      utils.info('Unknown key:', key);
+      this._graph.move(dir);
     }
-
-    return ev.returnValue;
   }
 
-  _onMutation(records) {
-    utils.debug('Mutation occurred');
+  _onSelected(ev) {
+    const el = ev.detail;
 
-    records.forEach(record => {
-      record.addedNodes.forEach(el => {
-        if (el && el.classList && el.classList.contains(this.options.selectableClass)) {
-          utils.info('Adding entity:', el, 'from mutation');
-          this.add(el);
+    if (this._selected) {
+      utils.debug('Deselecting', this._selected);
+      this._selected.classList.remove(this.options.selectedClass);
+    }
+
+    if (el && !el.classList.contains(this.options.selectedClass)) {
+      utils.debug('Selecting', el);
+      el.classList.add(this.options.selectedClass);
+    }
+
+    this._selected = el;
+  }
+
+  _onIntersection(changes) {
+    for (const change of changes) {
+      // Add visible things to the graph.
+      if (change.isIntersecting) {
+        this._graph.add(change.target);
+      } else {
+        this._graph.remove(change.target);
+      }
+    }
+  }
+
+  _onMutation(changes) {
+    utils.debug('Mutation observed...');
+
+    changes.forEach(change => {
+      change.addedNodes.forEach(el => {
+        for (const sel of this._getSelectableElements(el)) {
+          this._intObs.observe(sel);
         }
-
-        this.add(...getElements(el, this.options));
       });
 
-      record.removedNodes.forEach(el => {
-        if (el && el.classList && el.classList.contains(this.options.selectableClass)) {
-          utils.info('Removing entity:', el, 'from mutation')
-          this._graph.deleteByElement(el);
-        }
-
-        for (let cel in getElements(el, this.options)) {
-          utils.info('Removing entity child:', cel, 'from mutation')
-          this._graph.deleteByElement(cel);
+      change.removedNodes.forEach(el => {
+        for (const sel of this._getSelectableElements(el)) {
+          this._intObs.unobserve(sel);
         }
       });
     });

@@ -9,6 +9,7 @@ function createCanvas(parent) {
   {
     el = parent = document.createElement('div');
     document.body.appendChild(parent);
+    parent.style.pointerEvents = 'none';
     parent.style.position="absolute";
     parent.style.left="0px";
     parent.style.top="0px";
@@ -32,47 +33,27 @@ function createCanvas(parent) {
   return [el, canvas];
 }
 
+function drawLine(context, x1, y1, x2, y2) {
+  context.moveTo(x1, y1);
+  context.lineTo(x2, y2);
+}
+
 function visualize(parent, graph) {
 /*
   Visualizes the graph by overlaying a canvas element and drawing
   bounding boxes and lines for each element.
 */
-  if (!graph.root) {
-    utils.warn('Cannot visualize empty graph!');
-    return;
-  }
-
-  utils.info('Visualizing graph with', graph.children.length, 'nodes');
+  utils.info('Visualizing graph with', graph.children.size, 'nodes');
   const [el, canvas] = createCanvas(parent);
   const context = canvas.getContext('2d');
 
   for (let node of graph.children) {
-    utils.debug('Outlining node');
     context.beginPath();
-    context.strokeStyle = 'blue';
-    context.lineWidth = 1;
-    context.moveTo(node.geom.rect.left, node.geom.rect.top);
-    context.lineTo(node.geom.rect.right, node.geom.rect.top);
-    context.moveTo(node.geom.rect.left, node.geom.rect.top);
-    context.lineTo(node.geom.rect.left, node.geom.rect.bottom);
-    context.moveTo(node.geom.rect.right, node.geom.rect.top);
-    context.lineTo(node.geom.rect.right, node.geom.rect.bottom);
-    context.moveTo(node.geom.rect.left, node.geom.rect.bottom);
-    context.lineTo(node.geom.rect.right, node.geom.rect.bottom);
+    context.strokeStyle = 'black';
+    context.lineWidth = 2;
+    drawLine(context, node.x, node.rect.top, node.x, node.rect.bottom);
+    drawLine(context, node.rect.left, node.y, node.rect.right, node.y);
     context.stroke();
-
-    for (let dir of ALL) {
-      const dest = node[dir.name];
-      if (dest) {
-        utils.debug(`Drawing line from (${node.geom.x},${node.geom.y}) -> (${dest.geom.x},${dest.geom.y})`);
-        context.beginPath();
-        context.strokeStyle = 'red';
-        context.lineWidth = 2;
-        context.moveTo(node.geom.x, node.geom.y);
-        context.lineTo(dest.geom.x, dest.geom.y);
-        context.stroke();
-      }
-    }
   }
 
   return el;
