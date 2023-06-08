@@ -173,10 +173,10 @@ class Errokees {
     if (extra) {
       utils.raiseEventIf(el, extra);
     } else {
-      warn('No special handling');
+      utils.warn('No special handling');
     }
   
-    raiseEventIf(el, this.options.activateEvent);
+    utils.raiseEventIf(el, this.options.activateEvent);
   }
 
   _deselectElement(el) {
@@ -214,6 +214,7 @@ class Errokees {
     */
     let key;
 
+    utils.debug('Moust event:', ev, 'screen=', window.innerWidth, window.innerHeight);
     if (ev.movementX > 0) {
       key = 'ArrowRight';
     } else if (ev.movementX < 0) {
@@ -222,13 +223,13 @@ class Errokees {
       key = 'ArrowDown';
     } else if (ev.movementY < 0) {
       key = 'ArrowUp';
-    } else if (ev.screenX === 0) {
+    } else if (ev.clientX === 0) {
       key = 'ArrowLeft';
-    } else if (ev.screenY === 0) {
+    } else if (ev.clientY === 0) {
       key = 'ArrowUp';
-    } else if (ev.screenX === screen.width ) {
+    } else if (ev.clientX === window.innerWidth - 1) {
       key = 'ArrowRight';
-    } else if (ev.screenY === screen.height) {
+    } else if (ev.clientY === window.innerHeight - 1) {
       key = 'ArrowDown';
     } else {
       return;
