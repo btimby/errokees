@@ -1,160 +1,127 @@
 <html>
-    <head>
-        <title>Errokees demo</title>
-        <style>
-            /* Not really related to Errokees. */
-            html {
-                background-color: #aaa;
-            }
+  <head>
+    <title>Errokees demo</title>
+    <style>
+      /* Errorkees classes */
+      .ek-selectable {
+        border: solid 5px blue;
+      }
 
-            .card {
-                float: left;
-                width: 200px;
-                height: 200px;
-                background-color: #999;
-                padding: 4px;
-            }
+      .ek-selected {
+        border: solid 5px rgba(255, 0, 0, 5);
+      }
 
-            /* Any element with this class will be a navigation destination. */
-            .errokees-selectable {
-                border: solid 2px transparent;
-            }
+      /* Not really related to Errokees. */
+      html {
+          background-color: #aaa;
+      }
 
-            /* Assigned to selected destination. */
-            .errokees-selected {
-                border: solid 2px white;
-            }
+      #menu {
+        float: left;
+        width: 100px;
+      }
 
-            /* Same as above, but customized for certain elements. */
-            button.errokees-selectable,
-            select.errokees-selectable,
-            input.errokees-selectable {
-                background-color: #aaa;
-            }
-            button.errokees-selected,
-            select.errokees-selected,
-            input.errokees-selected {
-                background-color: white;
-            }
+      #menu button {
+        margin-top: 5px;
+      }
 
-            .errokees-extra1 {
-                background-color: white;
-            }
+      #grid {
+        padding-left: 100px;
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        overflow: hidden;
+      }
 
-            .errokees-extra2 {
-                border-color: red;
-            }
-        </style>
-    </head>
+      .gridrow-container {
+        box-sizing: inherit;
+      }
 
-    <body>
-        <div id="container">
-            <div
-                class="card errokees-selectable"
-                data-ek-select-class="errokees-extra1 errokees-extra2"
-            ></div>
+      .gridrow {
+        display: flex;
+        overflow-x: hidden;
+        overflow-y: hidden;
+        height: 404;
+      }
+
+      .card {
+        float: left;
+        min-width: 480px;
+        max-width: 480px;
+        height: 400px;
+        margin: 5px;
+      }
+
+      .card img {
+        max-width: 100%;
+      }
+
+      .card button {
+        margin: 20px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="container">
+      <div id="menu">
+        <button>Menu item 1</button>
+        <button>Menu item 2</button>
+        <button>Menu item 3</button>
+        <button>Menu item 4</button>
+        <button>Menu item 5</button>
+      </div>
+
+      <div id="grid">
+        <div class="gridrow-container">
+          <div class="gridrow">
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
             <div class="card">
-                <button onclick="alert('clicked')" class="errokees-selectable">Submit</button>
+              <button class="add-card">Add card</button>
             </div>
-            <div class="card">
-                <div><input type="text" class="errokees-selectable"/></div>
-                <div>
-                    <select class="errokees-selectable">
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                    </select>
-                </div>
-            </div>
-            <div
-                class="card errokees-selectable"
-                data-ek-activate-event-name="click"
-                data-ek-activate-event-target="a"
-            >
-                <a id="clickableInnerLink"></a>
-            </div>
-            <div class="card errokees-selectable"></div>
-            <div class="card errokees-selectable"></div>
-            <div class="card errokees-selectable">
-                <span>
-                    <a id="selectableLink">Select my parent!</a>
-                </span>
-            </div>
-            <div class="card errokees-selectable"></div>
-            <div class="card errokees-selectable"></div>
-            <div class="card"></div>
-            <div class="card errokees-selectable"></div>
-            <div class="card errokees-selectable"></div>
+          </div>
         </div>
-        <div>
-            <button id='addButton'>Add</button>
-            <button id='delButton'>Del</button><br/>
-            <button id='pauseButton'>Pause</button>
-            <button id='resumeButton'>Resume</button>
-            <button id='visualizeButton'>Visualize</button>
-        </div>
-    </body>
+        <button id="add-row">Add row</button>
+      </div>
+    </div>
+  </body>
 
-    <script type="text/javascript">
-    /*
-    We are using all the defaults. If you like, you can override
-    the keys, classes and a few other items using an options object.
-    */
-    var ek = new Errokees.default(null, {
-        origin: 'down',
-        selectEvent: {
-            name: 'errokees-select',
-            recurse: true,
-        },
-        deselectEvent: {
-            name: 'errokees-deselect',
-            recurse: true,
-        },
+  <script type="text/javascript">
+  (function () {
+    var grid = document.querySelector('#grid');
+    var addRowButton = document.querySelector('#add-row');
+    var addCardButton = document.querySelector('.add-card');
+
+    addRowButton.addEventListener('click', () => {
+      var copy = grid.querySelector('.gridrow').cloneNode(true);
+      copy.querySelector('.add-card').addEventListener('click', addCard);
+      grid.insertBefore(copy, addRowButton)
     });
 
-    var container = document.getElementById('container');
+    function addCard() {
+      var row = this.parentNode.parentNode;
+      var card = row.querySelector('.card');
+      var copy = card.cloneNode(true);
+      copy.classList.remove('ek-selected');
+      row.insertBefore(copy, this.parentNode);
+    }
 
-    var link = document.getElementById('selectableLink');
-    link.addEventListener('errokees-select', function() {
-        console.log('Link selected');
+    addCardButton.addEventListener('click', addCard);
+
+    var ek = new Errokees.default({
+      visualize: false,
+      mouse: true,
     });
-    link.addEventListener('errokees-deselect', function() {
-        console.log('Link deselected');
-    });
-    document
-        .getElementById('clickableInnerLink')
-        .addEventListener('click', function() {
-            alert('Inner link clicked')
-        });
-
-    document
-        .getElementById('addButton')
-        .addEventListener('click', function() {
-            const newDiv = document.createElement('div');
-            newDiv.classList.add('card');
-            newDiv.classList.add('errokees-selectable');
-            container.appendChild(newDiv);
-        });
-    document
-        .getElementById('delButton')
-        .addEventListener('click', function() {
-            container.removeChild(container.lastChild);
-        });
-
-    document
-        .getElementById('pauseButton')
-        .addEventListener('click', function() {
-            ek.pause();
-        });
-    document
-        .getElementById('resumeButton')
-        .addEventListener('click', function() {
-            ek.resume();
-        });
-    document
-        .getElementById('visualizeButton')
-        .addEventListener('click', function() {
-            ek.toggleVisualization();
-        });
-</script>
+  })();
+  </script>
 </html>

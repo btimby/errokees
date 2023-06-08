@@ -25,6 +25,10 @@ function warn(...args) {
   console.warn('[errokees]', ...args);
 }
 
+function warning(...args) {
+  return warn(...args);
+}
+
 function error(...args) {
   console.error('[errokees]', ...args);
 }
@@ -119,81 +123,8 @@ function readDataClasses(el, prefix) {
   return classes;
 }
 
-function deselect(el, options) {
-  const elType = el.tagName.toLowerCase();
-  readDataClasses(el, 'select').forEach(cls => el.classList.remove(cls));
-  if (options.selectedClass) {
-    el.classList.remove(options.selectedClass);
-  }
-  raiseEventIf(el, options.deselectEvent);
-  raiseEventIf(el, readDataEvent(el, 'deselect'))
-  if (elType === 'input' || elType === 'select') {
-    el.blur();
-  }
-}
-
-function select(el, options) {
-  const scroll = el.getAttribute('data-ek-scroll');
-  readDataClasses(el, 'select').forEach(cls => el.classList.add(cls));
-  if (options.selectedClass) {
-    el.classList.add(options.selectedClass);
-  }
-  if (scroll || options.scroll) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-  }
-  raiseEventIf(el, options.selectEvent);
-  raiseEventIf(el, readDataEvent(el, 'select'))
-}
-
-function activateSelection(el, options) {
-  const extra = readDataEvent(el, 'activate');
-  const elType = el.tagName.toLowerCase();
-  let inputType;
-  if (elType === 'input') {
-    inputType = el.getAttribute('type');
-  }
-  debug('elType:', elType);
-
-  // special element handling.
-  switch (elType) {
-    case 'a':
-    case 'button':
-      debug('Focusing & clicking', elType);
-      el.focus();
-      el.click();
-      break;
-
-    case 'input':
-      if (inputType in ['checkbox', 'radio']) {
-        debug('Checking', inputType);
-        el.checked = !el.checked;
-      }
-      // fall through
-    case 'textarea':
-      debug('Focusing', elType);
-      el.focus();
-      break;
-
-    case 'select':
-      debug('Opening', elType);
-      el.focus();
-      // NOTE: setting this always triggers change (to blur).
-      el.selectedIndex = -1;
-      el.addEventListener('change', el.blur, { once: true });
-      break;
-  }
-
-  if (extra) {
-    raiseEventIf(el, extra);
-  } else {
-    warn('No special handling');
-  }
-
-  raiseEventIf(el, options.activateEvent);
-}
-
 export default {
-  debug, info, warn, error, setLogLevel, isFocused, isCursorLeft, isCursorRight,
-  isSelectedTop, isSelectedBottom, getViewportDimensions, raiseEventIf, select,
-  deselect, activateSelection,
+  debug, info, warn, warning, error, setLogLevel, isFocused, isCursorLeft,
+  isCursorRight, isSelectedTop, isSelectedBottom, getViewportDimensions,
+  raiseEventIf, readDataClasses, readDataEvent,
 };

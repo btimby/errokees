@@ -1,4 +1,5 @@
-import { ALL } from './directions.js';
+import { DIRECTIONS } from './directions.js';
+import Geom from './geom.js';
 import utils from './utils.js';
 
 function createCanvas(parent) {
@@ -9,12 +10,13 @@ function createCanvas(parent) {
   {
     el = parent = document.createElement('div');
     document.body.appendChild(parent);
-    parent.style.position="absolute";
-    parent.style.left="0px";
-    parent.style.top="0px";
-    parent.style.width="100%";
-    parent.style.height="100%";
-    parent.style.zIndex="100";
+    parent.style.pointerEvents = 'none';
+    parent.style.position = "absolute";
+    parent.style.left = "0px";
+    parent.style.top = "0px";
+    parent.style.width = "100%";
+    parent.style.height = "100%";
+    parent.style.zIndex = "100";
     container = document.body;
   } else {
     el = canvas;
@@ -32,44 +34,45 @@ function createCanvas(parent) {
   return [el, canvas];
 }
 
+function drawLine(context, x1, y1, x2, y2) {
+  context.moveTo(x1, y1);
+  context.lineTo(x2, y2);
+}
+
 function visualize(parent, graph) {
 /*
   Visualizes the graph by overlaying a canvas element and drawing
   bounding boxes and lines for each element.
 */
-  if (!graph.root) {
-    utils.warn('Cannot visualize empty graph!');
-    return;
-  }
-
   utils.info('Visualizing graph with', graph.children.length, 'nodes');
   const [el, canvas] = createCanvas(parent);
   const context = canvas.getContext('2d');
 
-  for (let node of graph.children) {
-    utils.debug('Outlining node');
-    context.beginPath();
-    context.strokeStyle = 'blue';
-    context.lineWidth = 1;
-    context.moveTo(node.geom.rect.left, node.geom.rect.top);
-    context.lineTo(node.geom.rect.right, node.geom.rect.top);
-    context.moveTo(node.geom.rect.left, node.geom.rect.top);
-    context.lineTo(node.geom.rect.left, node.geom.rect.bottom);
-    context.moveTo(node.geom.rect.right, node.geom.rect.top);
-    context.lineTo(node.geom.rect.right, node.geom.rect.bottom);
-    context.moveTo(node.geom.rect.left, node.geom.rect.bottom);
-    context.lineTo(node.geom.rect.right, node.geom.rect.bottom);
-    context.stroke();
+  for (let node of graph._elements) {
+    utils.debug('Outlining node', node);
+    const geom1 = new Geom(node.el);
+    // context.beginPath();
+    // context.strokeStyle = 'blue';
+    // context.lineWidth = 1;
+    // context.moveTo(geom1.rect.left, geom1.rect.top);
+    // context.lineTo(geom1.rect.right, geom1.rect.top);
+    // context.moveTo(geom1.rect.left, geom1.rect.top);
+    // context.lineTo(geom1.rect.left, geom1.rect.bottom);
+    // context.moveTo(geom1.rect.right, geom1.rect.top);
+    // context.lineTo(geom1.rect.right, geom1.rect.bottom);
+    // context.moveTo(geom1.rect.left, geom1.rect.bottom);
+    // context.lineTo(geom1.rect.right, geom1.rect.bottom);
+    // context.stroke();
 
-    for (let dir of ALL) {
-      const dest = node[dir.name];
+    for (let dir of DIRECTIONS) {
+      const dest = node[dir];
       if (dest) {
-        utils.debug(`Drawing line from (${node.geom.x},${node.geom.y}) -> (${dest.geom.x},${dest.geom.y})`);
+        const geom2 = new Geom(dest.el);
+        utils.debug(`Drawing line from (${geom1.x},${geom1.y}) -> (${geom2.x},${geom2.y})`);
         context.beginPath();
         context.strokeStyle = 'red';
-        context.lineWidth = 2;
-        context.moveTo(node.geom.x, node.geom.y);
-        context.lineTo(dest.geom.x, dest.geom.y);
+        context.lineWidth = 5;
+        drawLine(context, geom1.x, geom1.y, geom2.x, geom2.y);
         context.stroke();
       }
     }
