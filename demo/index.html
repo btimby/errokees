@@ -61,6 +61,14 @@
       .card button {
         margin: 20px;
       }
+
+      .add-row {
+        margin: 5px;
+      }
+
+      .add-card {
+        margin: 5px;
+      }
     </style>
   </head>
 
@@ -97,31 +105,33 @@
   </body>
 
   <script type="text/javascript">
-  (function () {
-    var grid = document.querySelector('#grid');
-    var addRowButton = document.querySelector('#add-row');
-    var addCardButton = document.querySelector('.add-card');
+    (function () {
+      var grid = document.querySelector('#grid');
+      var addRowButton = document.querySelector('#add-row');
+      var addCardButton = document.querySelector('.add-card');
 
-    addRowButton.addEventListener('click', () => {
-      var copy = grid.querySelector('.gridrow').cloneNode(true);
-      copy.querySelector('.add-card').addEventListener('click', addCard);
-      grid.insertBefore(copy, addRowButton)
-    });
+      var ek = new Errokees.default({
+        visualize: true,
+        mouse: false,
+      });
 
-    function addCard() {
-      var row = this.parentNode.parentNode;
-      var card = row.querySelector('.card');
-      var copy = card.cloneNode(true);
-      copy.classList.remove('ek-selected');
-      row.insertBefore(copy, this.parentNode);
-    }
+      addRowButton.addEventListener('click', () => {
+        var copy = grid.querySelector('.gridrow').cloneNode(true);
+        copy.querySelector('.add-card').addEventListener('click', addCard);
+        grid.insertBefore(copy, addRowButton);
+        ek.select(this);
+      });
 
-    addCardButton.addEventListener('click', addCard);
+      function addCard() {
+        var row = this.parentNode.parentNode;
+        var card = row.querySelector('.card');
+        var copy = card.cloneNode(true);
+        copy.classList.remove('ek-selected');
+        row.insertBefore(copy, this.parentNode);
+        ek.select(this);
+      }
 
-    var ek = new Errokees.default({
-      visualize: true,
-      mouse: false,
-    });
-  })();
+      addCardButton.addEventListener('click', addCard);
+    })();
   </script>
 </html>

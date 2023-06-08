@@ -2,17 +2,20 @@
 Errokees [ah-ro-ki:z]
 */
 "use strict";
+
 import '@babel/polyfill';
 import utils from './utils.js';
 import Graph from './graph.js';
 
 const DEFAULTS = {
   // keys...
-  up: 'ArrowUp',
-  down: 'ArrowDown',
-  left: 'ArrowLeft',
-  right: 'ArrowRight',
-  activate: 'Enter',
+  keys: {
+    up: 'ArrowUp',
+    down: 'ArrowDown',
+    left: 'ArrowLeft',
+    right: 'ArrowRight',
+    activate: 'Enter',
+  },
 
   // css classes
   selectableClass: 'ek-selectable',
@@ -45,11 +48,11 @@ class Errokees {
       ...options,
     };
     this.options.elementTypes = new Set(this.options.elementTypes);
-    this._movements = {
-      [this.options.up]: 'up',
-      [this.options.down]: 'down',
-      [this.options.left]: 'left',
-      [this.options.right]: 'right',
+    this._keyMap = {
+      [this.options.keys.up]: 'up',
+      [this.options.keys.down]: 'down',
+      [this.options.keys.left]: 'left',
+      [this.options.keys.right]: 'right',
     }
     this._graph = new Graph(this.scope, {visualize: this.options.visualize});
     this._graph.addEventListener('selected', this._onSelected.bind(this));
@@ -74,11 +77,12 @@ class Errokees {
     this._keyHandler = this._onKeyInput.bind(this);
     this.scope.addEventListener(this.options.keyEventName, this._keyHandler);
     this._scrolling = null;
-    this.scope.addEventListener('scroll', () => {
-      clearTimeout(this._scrolling);
-      this._scrolling = setTimeout(() => {
+    this.scope.addEventListener('scrollend', () => {
+    //this.scope.addEventListener('scrollend', () => {
+        //clearTimeout(this._scrolling);
+      //this._scrolling = setTimeout(() => {
         this._graph.update();
-      }, 66);
+      //}, 100);
     });
     this._mouseMoving = null;
     if (this.options.mouse) {
@@ -220,21 +224,21 @@ class Errokees {
 
     utils.debug('Mouse event:', ev, 'screen=', window.innerWidth, window.innerHeight);
     if (ev.movementX > 0) {
-      key = this.options.right;
+      key = this.options.keys.right;
     } else if (ev.movementX < 0) {
-      key = this.options.left;
+      key = this.options.keys.left;
     } else if (ev.movementY > 0) {
-      key = this.options.down;
+      key = this.options.keys.down;
     } else if (ev.movementY < 0) {
-      key = this.options.up;
+      key = this.options.keys.up;
     } else if (ev.clientX === 0) {
-      key = this.options.left;
+      key = this.options.keys.left;
     } else if (ev.clientY === 0) {
-      key = this.options.up;
+      key = this.options.keys.up;
     } else if (ev.clientX === window.innerWidth - 1) {
-      key = this.options.right;
+      key = this.options.keys.right;
     } else if (ev.clientY === window.innerHeight - 1) {
-      key = this.options.down;
+      key = this.options.keys.down;
     } else {
       return;
     }
@@ -251,10 +255,10 @@ class Errokees {
 
   _onKeyInput(ev) {
     const { key } = ev;
-    const dir = this._movements[key];
+    const dir = this._keyMap[key];
     utils.debug('Received key', key, '->', dir);
 
-    if (key === this.options.activate) {
+    if (key === this.options.keys.activate) {
       ev.returnValue = this._activateElement(this._selected);
     } else if (dir) {
       this._graph.move(dir);
