@@ -1,4 +1,4 @@
-import { DIRECTIONS, INVERTED } from './directions.js';
+import { DIRECTIONS } from './directions.js';
 import utils from './utils.js';
 
 class Node {

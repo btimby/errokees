@@ -13,14 +13,7 @@ class Graph extends EventTarget {
     this._selected = null;
     this._visualize = visualize;
     this._canvas = null;
-  }
-
-  get children() {
-    if (!this._root) {
-      return [];
-    }
-  
-    return this._root.children;
+    this._updating = null;
   }
 
   set visualize(value) {
@@ -43,11 +36,6 @@ class Graph extends EventTarget {
 
   get selected() {
     return this._selected;
-  }
-
-  get children() {
-    if (!this._root) return [];
-    return this._root.children;
   }
 
   _update() {
@@ -82,6 +70,13 @@ class Graph extends EventTarget {
     if (this.visualize) this.draw();
   }
 
+  update() {
+    clearInterval(this._updating);
+    this._updating = setTimeout(() => {
+      this._update();
+    }, 100);
+  }
+
   add() {
     for (const el of arguments) {
       utils.debug('Adding', el);
@@ -94,7 +89,7 @@ class Graph extends EventTarget {
       }
     }
 
-    this._update();
+    this.update();
   }
 
   remove(el) {
@@ -107,7 +102,16 @@ class Graph extends EventTarget {
       }
     }
 
-    if (found) this._update();
+    if (found) this.update();
+  }
+
+  select(el) {
+    for (const node in this._elements) {
+      if (node.el === el) {
+        this.selected = node;
+        return;
+      }
+    }
   }
 
   move(dir) {

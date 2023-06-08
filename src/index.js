@@ -6,7 +6,7 @@ import '@babel/polyfill';
 import utils from './utils.js';
 import Graph from './graph.js';
 
-const defaults = {
+const DEFAULTS = {
   // keys...
   up: 'ArrowUp',
   down: 'ArrowDown',
@@ -34,18 +34,18 @@ const defaults = {
 
   visualize: false,
   margin: '50%',
-  mouse: true,
+  mouse: false,
 }
 
 class Errokees {
   constructor(options) {
     this.scope = options.scope || document.body;
     this.options = {
-      ...defaults,
+      ...DEFAULTS,
       ...options,
     };
     this.options.elementTypes = new Set(this.options.elementTypes);
-    this.movements = {
+    this._movements = {
       [this.options.up]: 'up',
       [this.options.down]: 'down',
       [this.options.left]: 'left',
@@ -77,7 +77,7 @@ class Errokees {
     this.scope.addEventListener('scroll', () => {
       clearTimeout(this._scrolling);
       this._scrolling = setTimeout(() => {
-        this._graph._update();
+        this._graph.update();
       }, 66);
     });
     this._mouseMoving = null;
@@ -92,6 +92,10 @@ class Errokees {
 
   get visualize() {
     return this._graph.visualize;
+  }
+
+  select(el) {
+    this._graph.select(el);
   }
 
   _getSelectableElements(el) {
@@ -208,29 +212,29 @@ class Errokees {
   }
 
   _onMouseInput(ev) {
-    /*
-    Simulate keyboard arrow keys using "mouse" movement. This is useful on
-    TV browsers.
-    */
+  /*
+  Simulate keyboard arrow keys using "mouse" movement. This is useful on
+  TV browsers.
+  */
     let key;
 
-    utils.debug('Moust event:', ev, 'screen=', window.innerWidth, window.innerHeight);
+    utils.debug('Mouse event:', ev, 'screen=', window.innerWidth, window.innerHeight);
     if (ev.movementX > 0) {
-      key = 'ArrowRight';
+      key = this.options.right;
     } else if (ev.movementX < 0) {
-      key = 'ArrowLeft';
+      key = this.options.left;
     } else if (ev.movementY > 0) {
-      key = 'ArrowDown';
+      key = this.options.down;
     } else if (ev.movementY < 0) {
-      key = 'ArrowUp';
+      key = this.options.up;
     } else if (ev.clientX === 0) {
-      key = 'ArrowLeft';
+      key = this.options.left;
     } else if (ev.clientY === 0) {
-      key = 'ArrowUp';
+      key = this.options.up;
     } else if (ev.clientX === window.innerWidth - 1) {
-      key = 'ArrowRight';
+      key = this.options.right;
     } else if (ev.clientY === window.innerHeight - 1) {
-      key = 'ArrowDown';
+      key = this.options.down;
     } else {
       return;
     }
@@ -247,7 +251,7 @@ class Errokees {
 
   _onKeyInput(ev) {
     const { key } = ev;
-    const dir = this.movements[key];
+    const dir = this._movements[key];
     utils.debug('Received key', key, '->', dir);
 
     if (key === this.options.activate) {

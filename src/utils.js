@@ -6,8 +6,9 @@ const LOG_LEVELS = {
 };
 
 function _shouldLog(level) {
-  return (localStorage.errokeesLogLevel &&
-          localStorage.errokeesLogLevel >= level);
+  let logLevel = localStorage.errokeesLogLevel;
+  if (logLevel) logLevel = parseInt(logLevel, 10);
+  return (logLevel >= level);
 }
 
 function debug(...args) {

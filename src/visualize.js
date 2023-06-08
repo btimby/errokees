@@ -34,9 +34,14 @@ function createCanvas(parent) {
   return [el, canvas];
 }
 
-function drawLine(context, x1, y1, x2, y2) {
+function drawLine(context, x1, y1, x2, y2, color) {
+  utils.debug(`Drawing line from (${x1},${y1}) -> (${x2},${y2})`);
+  context.beginPath();
+  context.strokeStyle = color;
+  context.lineWidth = 5;
   context.moveTo(x1, y1);
   context.lineTo(x2, y2);
+  context.stroke();
 }
 
 function visualize(parent, graph) {
@@ -44,36 +49,19 @@ function visualize(parent, graph) {
   Visualizes the graph by overlaying a canvas element and drawing
   bounding boxes and lines for each element.
 */
-  utils.info('Visualizing graph with', graph.children.length, 'nodes');
+  utils.info('Visualizing graph with', graph._elements.length, 'nodes');
   const [el, canvas] = createCanvas(parent);
   const context = canvas.getContext('2d');
 
   for (let node of graph._elements) {
     utils.debug('Outlining node', node);
     const geom1 = new Geom(node.el);
-    // context.beginPath();
-    // context.strokeStyle = 'blue';
-    // context.lineWidth = 1;
-    // context.moveTo(geom1.rect.left, geom1.rect.top);
-    // context.lineTo(geom1.rect.right, geom1.rect.top);
-    // context.moveTo(geom1.rect.left, geom1.rect.top);
-    // context.lineTo(geom1.rect.left, geom1.rect.bottom);
-    // context.moveTo(geom1.rect.right, geom1.rect.top);
-    // context.lineTo(geom1.rect.right, geom1.rect.bottom);
-    // context.moveTo(geom1.rect.left, geom1.rect.bottom);
-    // context.lineTo(geom1.rect.right, geom1.rect.bottom);
-    // context.stroke();
 
     for (let dir of DIRECTIONS) {
       const dest = node[dir];
       if (dest) {
         const geom2 = new Geom(dest.el);
-        utils.debug(`Drawing line from (${geom1.x},${geom1.y}) -> (${geom2.x},${geom2.y})`);
-        context.beginPath();
-        context.strokeStyle = 'red';
-        context.lineWidth = 5;
-        drawLine(context, geom1.x, geom1.y, geom2.x, geom2.y);
-        context.stroke();
+        drawLine(context, geom1.x, geom1.y, geom2.x, geom2.y, 'red');
       }
     }
   }
