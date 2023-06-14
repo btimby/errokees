@@ -52,7 +52,9 @@ class Geom {
   }
 
   distanceTo(geom) {
-    return this.distanceTo1(geom);
+    // NOTE: We could use logic here to favor items with certain features.
+    // Such as sharing an x or y value.
+    return this.distanceTo2(geom);  // this.distanceTo1(geom);
   }
 
   distanceTo1(geom) {

@@ -26,7 +26,7 @@
       }
 
       #grid {
-        padding-left: 100px;
+        margin-left: 100px;
         position: absolute;
         top: 0;
         bottom: 0;
@@ -75,11 +75,10 @@
   <body>
     <div id="container">
       <div id="menu">
-        <button>Menu item 1</button>
-        <button>Menu item 2</button>
-        <button>Menu item 3</button>
-        <button>Menu item 4</button>
-        <button>Menu item 5</button>
+        <button id="pause">Pause</button>
+        <button id="resume">Resume</button>
+        <button id="visualize">Visualize</button>
+        <button id="unvisualize">No Visualize</button>
       </div>
 
       <div id="grid">
@@ -109,12 +108,16 @@
       var grid = document.querySelector('#grid');
       var addRowButton = document.querySelector('#add-row');
       var addCardButton = document.querySelector('.add-card');
+      var pauseButton = document.querySelector('#pause');
+      var resumeButton = document.querySelector('#resume');
+      var visualizeButton = document.querySelector('#visualize');
+      var unvisualizeButton = document.querySelector('#unvisualize');
 
       var ek = new Errokees.default({
         visualize: true,
         mouse: false,
       });
-
+    
       addRowButton.addEventListener('click', () => {
         var copy = grid.querySelector('.gridrow').cloneNode(true);
         copy.querySelector('.add-card').addEventListener('click', addCard);
@@ -132,6 +135,20 @@
       }
 
       addCardButton.addEventListener('click', addCard);
+      pauseButton.addEventListener('click', () => {
+        console.log('Pause clicked')
+        ek.pause();
+      });
+      resumeButton.addEventListener('click', () => {
+        console.log('Resume clicked')
+        ek.resume();
+      });
+      visualizeButton.addEventListener('click', () => {
+        ek.visualize = true;
+      });
+      unvisualizeButton.addEventListener('click', () => {
+        ek.visualize = false;
+      });
     })();
   </script>
 </html>

@@ -57,7 +57,22 @@ class Errokees {
     this._graph = new Graph(this.scope, {visualize: this.options.visualize});
     this._graph.addEventListener('selected', this._onSelected.bind(this));
 
+    this._paused = true;
+    this._scrolling = null;
+    this._selected = null;
+    this._mouseMoving = null;
+    this._mutObs = null;
+    this._intObs = null;
+    this._mutationHandler = this._onMutation.bind(this);
+    this._keyHandler = this._onKeyInput.bind(this);
+    this._mouseHandler = this._onMouseInput.bind(this);
+    this._scrollHandler = this._onScroll.bind(this);
     this._intersectionHandler = this._onIntersection.bind(this);
+    this._mutObs = new MutationObserver(this._mutationHandler);
+    this._mutObs.observe(this.scope, {
+      subtree: true,
+      childList: true,
+    });
     this._intObs = new IntersectionObserver(this._intersectionHandler, {
       rootMargin: this.options.margin,
     });
@@ -65,29 +80,35 @@ class Errokees {
     for (const el of this._getSelectableElements(this.scope)) {
       this._intObs.observe(el);
     }
+    this.resume();
+  }
 
-    this._mutationHandler = this._onMutation.bind(this);
-    this._mutObs = new MutationObserver(this._mutationHandler);
-    this._mutObs.observe(this.scope, {
-      subtree: true,
-      childList: true,
-    });
-
-    this._selected = null;
-    this._keyHandler = this._onKeyInput.bind(this);
-    this.scope.addEventListener(this.options.keyEventName, this._keyHandler);
-    this._scrolling = null;
-    this.scope.addEventListener('scrollend', () => {
-    //this.scope.addEventListener('scrollend', () => {
-        //clearTimeout(this._scrolling);
-      //this._scrolling = setTimeout(() => {
-        this._graph.update();
-      //}, 100);
-    });
-    this._mouseMoving = null;
-    if (this.options.mouse) {
-      this.scope.addEventListener('mousemove', this._onMouseInput.bind(this));
+  pause() {
+    if (this._paused) {
+      return;
     }
+
+    utils.info('Pausing event handlers');
+    this.scope.removeEventListener(this.options.keyEventName, this._keyHandler);
+    this.scope.removeEventListener('scrollend', this._scrollHandler);
+    if (this.options.mouse) {
+      this.scope.removeEventListener('mousemove', this._mouseHandler);
+    }
+    this._paused = true;
+  }
+
+  resume() {
+    if (!this._paused) {
+      return;
+    }
+
+    utils.info('Resuming event handlers');
+    this.scope.addEventListener(this.options.keyEventName, this._keyHandler);
+    this.scope.addEventListener('scrollend', this._scrollHandler);
+    if (this.options.mouse) {
+      this.scope.addEventListener('mousemove', this._mouseHandler);
+    }
+    this._paused = false;
   }
 
   set visualize(value) {
@@ -154,7 +175,7 @@ class Errokees {
       case 'a':
       case 'button':
         utils.debug('Focusing & clicking', elType);
-        el.focus();
+        //el.focus();
         el.click();
         break;
   
@@ -308,6 +329,10 @@ class Errokees {
         }
       });
     });
+  }
+
+  _onScroll() {
+    this._graph.update();
   }
 }
 
