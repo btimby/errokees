@@ -36,7 +36,8 @@ const DEFAULTS = {
   ],
 
   visualize: false,
-  margin: '50%',
+  observerRoot: document.body,
+  observerMargin: '200px;',
   mouse: false,
 }
 
@@ -74,7 +75,8 @@ class Errokees {
       childList: true,
     });
     this._intObs = new IntersectionObserver(this._intersectionHandler, {
-      rootMargin: this.options.margin,
+      root: this.options.observerRoot,
+      rootMargin: this.options.observerMargin,
     });
 
     for (const el of this._getSelectableElements(this.scope)) {
