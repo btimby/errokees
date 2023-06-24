@@ -1,3 +1,4 @@
+import { EventTarget } from "event-target-shim";
 import utils from './utils.js';
 import Node from './node.js';
 import Geom from './geom.js';
@@ -40,34 +41,46 @@ class Graph extends EventTarget {
 
   _update() {
     for (const node1 of this._elements) {
+      if (!node1.el.isConnected) {
+        utils.warn('Found dead node', node1);
+        this._elements.remove(node1);
+        continue;
+      }
+
+      node1.locate();
+    }
+
+    for (const node1 of this._elements) {
       for (const dir of DIRECTIONS) {
         utils.debug('Finding', dir, 'neighbors for', node1.el);
-        const closest = { node: null, geom: null };
-
+        const cantidates = [];
         for (const node2 of this._elements) {
           if (node1 === node2) continue;
-          // NOTE: for performance, you could pre-create geoms.
-          const geom1 = new Geom(node1.el);
-          const geom2 = new Geom(node2.el);
+          if (node1.geom.isInQuadrant(dir, node2.geom)) {
+            cantidates.push(node2);
+          }
+        }
+        let closest = null;
 
-          if (geom1.directionTo(geom2) === dir) {
-            if (!closest.node) {
+        utils.debug('Searching', cantidates.length, 'cantidates');
+        for (const node2 of cantidates) {
+          if (node1.geom.directionTo(node2.geom) === dir) {
+            if (!closest) {
               utils.debug('Found neighbor', node2.el);
-              closest.node = node2;
-              closest.geom = geom2;
-            } else if (geom1.distanceTo(geom2) < geom1.distanceTo(closest.geom)) {
-              utils.debug('Found better neighbor', closest.node.el);
-              closest.node = node2;
-              closest.geom = geom2;
+              closest = node2;
+            } else if (node1.geom.distanceTo(node2.geom, dir) < node1.geom.distanceTo(closest.geom, dir)) {
+              utils.debug('Found better neighbor', closest.el);
+              closest = node2;
             }
           }
         }
 
-        node1[dir] = closest.node;
+        node1[dir] = closest;
       }
     }
 
     if (this.visualize) this.draw();
+    this.dispatchEvent(new CustomEvent('updated'));
   }
 
   update() {
@@ -77,41 +90,59 @@ class Graph extends EventTarget {
     }, 100);
   }
 
-  add() {
-    for (const el of arguments) {
-      utils.debug('Adding', el);
-      const node = new Node(el);
-      this._elements.add(node);
+  _add(el) {
+    utils.debug('Adding', el);
+    const node = new Node(el);
+    this._elements.add(node);
+  }
 
-      if (!this.selected) {
-        utils.debug('Auto-selecting first node');
-        this.selected = node;
-      }
+  add() {
+    const first = arguments[0];
+    for (const el of arguments) {
+      this._add(el);
     }
 
     this.update();
+
+    if (!this.selected && first) {
+      utils.debug('Auto-selecting first node');
+      this.selected = first;
+    }
   }
 
-  remove(el) {
-    let found = false;
+  _remove(el) {
+    utils.debug('Removing', el);
     for (const node of this._elements) {
       if (node.el === el) {
         this._elements.delete(node);
-        found = true;
-        break;
+        return true;
       }
+    }
+  }
+
+  remove() {
+    let found = false;
+
+    for (const el of arguments) {
+      if (this._remove(el)) found = true;
     }
 
     if (found) this.update();
   }
 
   select(el) {
-    for (const node in this._elements) {
+    utils.debug('Searching for node belonging to', el);
+
+    for (const node of this._elements) {
+      utils.debug('Checking', node.el);
       if (node.el === el) {
+        utils.debug('Node found, selecting');
         this.selected = node;
         return;
       }
     }
+
+    utils.debug('Node not found');
   }
 
   move(dir) {

@@ -3,6 +3,7 @@ Errokees [ah-ro-ki:z]
 */
 "use strict";
 
+import { EventTarget } from "event-target-shim";
 import '@babel/polyfill';
 import utils from './utils.js';
 import Graph from './graph.js';
@@ -20,6 +21,7 @@ const DEFAULTS = {
   // css classes
   selectableClass: 'ek-selectable',
   selectedClass: 'ek-selected',
+  autoSelectClass: 'ek-autoselect',
   containerClass: 'ek-container',
 
   // Define events.
@@ -36,13 +38,14 @@ const DEFAULTS = {
   ],
 
   visualize: false,
-  observerRoot: document.body,
-  observerMargin: '200px;',
+  observerRoot: document.root,
+  observerMargin: '200px',
   mouse: false,
 }
 
-class Errokees {
+class Errokees extends EventTarget {
   constructor(options) {
+    super();
     this.scope = options.scope || document.body;
     this.options = {
       ...DEFAULTS,
@@ -57,6 +60,7 @@ class Errokees {
     }
     this._graph = new Graph(this.scope, {visualize: this.options.visualize});
     this._graph.addEventListener('selected', this._onSelected.bind(this));
+    this._graph.addEventListener('updated', ev => this.dispatchEvent(new CustomEvent(ev.type)));
 
     this._paused = true;
     this._scrolling = null;
@@ -308,7 +312,13 @@ class Errokees {
       utils.debug(change);
       // Add visible things to the graph.
       if (change.isIntersecting) {
+        const autoSelect = change.target.classList.contains(this.options.autoSelectClass);
         this._graph.add(change.target);
+        if (autoSelect) {
+          this._graph.addEventListener('updated', () => {
+            this._graph.select(change.target);
+          }, {once: true});
+        }
       } else {
         this._graph.remove(change.target);
       }
@@ -326,14 +336,17 @@ class Errokees {
       });
 
       change.removedNodes.forEach(el => {
-        for (const sel of this._getSelectableElements(el)) {
+        const selectable = this._getSelectableElements(el);
+        for (const sel of selectable) {
           this._intObs.unobserve(sel);
         }
+        this._graph.remove(...selectable);
       });
     });
   }
 
   _onScroll() {
+    utils.debug('Scrolling detected...');
     this._graph.update();
   }
 }

@@ -1,4 +1,5 @@
 import { DIRECTIONS } from './directions.js';
+import Geom from './geom.js';
 import utils from './utils.js';
 
 class Node {
@@ -13,6 +14,7 @@ class Node {
 
     // sub-graph
     this.subGraph = null;
+    this.geom = null;
   }
 
   get children() {
@@ -27,6 +29,17 @@ class Node {
     });
 
     return [...children];
+  }
+
+  locate() {
+    // Return true if the location changed between calls.
+    const geom = new Geom(this.el);
+    if (this.geom !== geom) {
+      this.geom = geom;
+      return true;
+    }
+
+    return false;
   }
 }
 

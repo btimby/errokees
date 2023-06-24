@@ -79,12 +79,13 @@
         <button id="resume">Resume</button>
         <button id="visualize">Visualize</button>
         <button id="unvisualize">No Visualize</button>
+        <button id="reset-selection">Reset Selection</button>
       </div>
 
       <div id="grid">
         <div class="gridrow-container">
           <div class="gridrow">
-            <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
+            <div class="card ek-autoselect ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
             <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
             <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
             <div class="card ek-selectable"><img src="images/By2d3vuASbM.jpeg"/></div>
@@ -112,6 +113,7 @@
       var resumeButton = document.querySelector('#resume');
       var visualizeButton = document.querySelector('#visualize');
       var unvisualizeButton = document.querySelector('#unvisualize');
+      var resetSelectionButton = document.querySelector('#reset-selection');
 
       var ek = new Errokees.default({
         visualize: true,
@@ -148,6 +150,12 @@
       });
       unvisualizeButton.addEventListener('click', () => {
         ek.visualize = false;
+      });
+      resetSelectionButton.addEventListener('click', () => {
+        var container = document.querySelector('.gridrow-container');
+        var firstRow = container.querySelector('.gridrow');
+        var firstCard = firstRow.querySelector('.card');
+        ek.select(firstCard);
       });
     })();
   </script>
